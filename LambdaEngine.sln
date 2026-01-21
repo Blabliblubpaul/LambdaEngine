@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LambdaEngine", "LambdaEngine\LambdaEngine.csproj", "{270CDB01-7732-477F-9180-1435497BE4F0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example", "Example\Example.csproj", "{29D46F1B-F26F-4F90-BEEE-53603177F0BF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{270CDB01-7732-477F-9180-1435497BE4F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{270CDB01-7732-477F-9180-1435497BE4F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{270CDB01-7732-477F-9180-1435497BE4F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29D46F1B-F26F-4F90-BEEE-53603177F0BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29D46F1B-F26F-4F90-BEEE-53603177F0BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29D46F1B-F26F-4F90-BEEE-53603177F0BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29D46F1B-F26F-4F90-BEEE-53603177F0BF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
