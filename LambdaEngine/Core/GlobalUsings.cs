@@ -1,0 +1,1 @@
+global using D_Debug = System.Diagnostics.Debug;

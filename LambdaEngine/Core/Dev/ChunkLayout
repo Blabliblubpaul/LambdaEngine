@@ -1,0 +1,83 @@
+                          Chunk - 16KiB
+|--------------------------------------------------------------|
+| C0[] | (Padding) | C1[] | (Padding) | C2[] | (Padding) | ... |
+|--------------------------------------------------------------|
+
+Example:
+C0 = 16B
+C1 = 8B
+C2 = 4B
+
+= 28B per Entity
+
+No alignment
+
+Entities:
+16.384 % 28 = 4
+16.384 / 28 = 585
+= 585 Entities, 4B wasted
+
+C0: 16 * 585 = 9360
+C1: 8 * 585 = 4680
+C2: 4 * 585 = 2340
+
+|--------------------------------------------|
+| C0[] | (Padding) | C1[] | (Padding) | C2[] |
+|--------------------------------------------|
+^------^-----------^------^-----------^------^
+   |        0          |        0        |
+  0-9360           9360-14040       14040-16380
+  
+
+Example:
+C0 = 16B
+C1 = 8B
+C2 = 4B
+
+= 28B per Entity
+
+32B alignment (for AVX2)
+
+C0 -> count is multiple of 2 or padding of 16B
+C1 -> count is multiple of 4 or padding of 8B/16B/24B
+C2 -> count is multiple of 8 or padding of 4B/8B/12B/16B/20B/24B/28B
+
+Entity Count N:
+16.384 / 28 = 585
+
+Sizes Si:
+S0 = N * 16 = 9360
+S1 = N * 8  = 4680
+S2 = N * 4  = 2340
+
+Alignment Ai:
+A0 = 32
+A1 = 32
+A2 = 32
+
+Offset o = 0
+Position Pi
+Padding PAi
+
+PA0 = 0
+P0 = 0
+o += 9360 // o = 9360
+
+PA1 = 9360 % 32 = 16
+o += PA1 // o = 9276
+P1 = o = 9376
+
+EntityCount N;
+Component0Size CS0
+Component1Size CS1
+HeaderSize HS (fixed, e.g. 32B)
+|---------------------------------------------------------|
+| HS | ID x N | (Padding) | CS0 x N | (Padding) | CS1 x N |
+|---------------------------------------------------------|
+CHUNK_SIZE = 16,384
+size = CHUNK_SIZE - header = 16,352
+
+allComponentSize = CS0 + CS1 + ... + CSx
+= 32
+metaDataSize = 4
+startEntityCount N_Start = metaDataSize + allComponentSize = 4 + 32 = 36

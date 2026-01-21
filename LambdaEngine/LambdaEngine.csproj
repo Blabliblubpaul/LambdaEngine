@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <LangVersion>default</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="JetBrains.Annotations" Version="2025.2.2" />
+      <PackageReference Include="SDL3-CS" Version="3.2.20" />
+      <PackageReference Include="SDL3-CS.Native" Version="3.2.20" />
+      <PackageReference Include="SDL3-CS.Native.Image" Version="3.2.4" />
+    </ItemGroup>
+
+<!--    <ItemGroup>-->
+<!--      <ProjectReference Include="..\..\LambdaEcsTesting\LambdaEcsAnalyzer\LambdaEcsAnalyzer\LambdaEcsAnalyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />-->
+<!--    </ItemGroup>-->
+
+</Project>
