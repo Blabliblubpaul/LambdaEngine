@@ -13,8 +13,10 @@ public sealed class CollisionSystem : ISystem {
     private EcsWorld _world;
     private EcsQuery _colliderQuery;
 
-    private const float cellSize = 100.0f;
-    private Dictionary<(int cx, int cy), List<int>> _grid = new();
+    internal const float cellSize = 100.0f;
+    internal Dictionary<(int cx, int cy), List<int>> _grid = new();
+    
+    internal CollisionSystem() { }
 
     public void OnSetup(LambdaEngine engine, EcsWorld world) {
         _world = world;
