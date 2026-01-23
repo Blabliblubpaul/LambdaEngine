@@ -1,8 +1,10 @@
+using System.Diagnostics;
 using System.Drawing;
 using System.Numerics;
 using LambdaEngine.Components.Transform;
 using LambdaEngine.Core;
 using LambdaEngine.Core.Queries;
+using LambdaEngine.Core.Queries.ComponentRef;
 using LambdaEngine.Core.Queries.QueryCollection;
 using LambdaEngine.Interfaces;
 using LambdaEngine.Debug;
@@ -10,11 +12,22 @@ using LambdaEngine.Debug;
 namespace LambdaEngine.Physics;
 
 public sealed class CollisionSystem : ISystem {
+    internal const int INTIAL_COLLIDER_CAPACITY = 256;
+    internal const float GRID_CELL_SIZE = 100.0f;
+
+    public static readonly CollisionSystem Instance = new();
+    
     private EcsWorld _world;
     private EcsQuery _colliderQuery;
+    
+    internal readonly Dictionary<(int cx, int cy), List<int>> Grid = new();
 
-    internal const float cellSize = 100.0f;
-    internal Dictionary<(int cx, int cy), List<int>> _grid = new();
+    internal int ColliderCount = 0;
+    internal int ColliderCapacity = INTIAL_COLLIDER_CAPACITY;
+    internal PositionComponent[] Positions;
+    internal ScaleComponent[] Scales;
+    internal ColliderComponent[] CollidersArr;
+    internal int[] EntityIds;
     
     internal CollisionSystem() { }
 
@@ -27,22 +40,32 @@ public sealed class CollisionSystem : ISystem {
             .Build();
     }
 
-    public void OnStartup() { }
+    public void OnStartup() {
+        Positions = new PositionComponent[ColliderCapacity];
+        Scales = new ScaleComponent[ColliderCapacity];
+        CollidersArr = new ColliderComponent[ColliderCapacity];
+        EntityIds = new int[ColliderCapacity];
+    }
 
     public void OnExecute() {
         Physics.collisionCount = 0;
-        _grid.Clear();
+
+        foreach (List<int> bucket in Grid.Values) {
+            bucket.Clear();
+        }
 
         QueryCollection<PositionComponent, ScaleComponent, ColliderComponent> colliders =
             _colliderQuery.Execute<PositionComponent, ScaleComponent, ColliderComponent>();
-
         
-        // TODO: allow direct indexing into query results to avoid this kind of caching.
-        int colliderCount = colliders.EntityCount;
-        PositionComponent[] positions = new PositionComponent[colliderCount];
-        ScaleComponent[] scales = new ScaleComponent[colliderCount];
-        ColliderComponent[] collidersArr = new ColliderComponent[colliderCount];
-        int[] entityIds = new int[colliderCount];
+        ColliderCount = colliders.EntityCount;
+        if (ColliderCount > ColliderCapacity) {
+            ColliderCapacity = Math.Max(ColliderCount, ColliderCapacity * 2);
+            
+            Positions = new PositionComponent[ColliderCapacity];
+            Scales = new ScaleComponent[ColliderCapacity];
+            CollidersArr = new ColliderComponent[ColliderCapacity];
+            EntityIds = new int[ColliderCapacity];
+        }
 
         int maxCollisions = (int)(colliders.EntityCount * (colliders.EntityCount - 1) * 0.5);
 
@@ -52,71 +75,56 @@ public sealed class CollisionSystem : ISystem {
         
         Physics.collisionCount = 0;
 
-        int idx = 0;
-        foreach (var entity in colliders.GetComponents()) {
-            ref var pos = ref entity.Item0;
-            ref var scale = ref entity.Item1;
-            ref var collider = ref entity.Item2;
+        int index = 0;
+        foreach (ComponentRef<PositionComponent, ScaleComponent, ColliderComponent> entity in colliders.GetComponents()) {
+            ref PositionComponent pos = ref entity.Item0;
+            ref ScaleComponent scale = ref entity.Item1;
+            ref ColliderComponent collider = ref entity.Item2;
         
             Vector2 size = collider.boxCollider.Size * scale.Scale;
         
             Vector2 halfSize = size * 0.5f;
         
-            int minCx = (int)MathF.Floor((pos.Position.X - halfSize.X) / cellSize);
-            int maxCx = (int)MathF.Floor((pos.Position.X + halfSize.X) / cellSize);
-            int minCy = (int)MathF.Floor((pos.Position.Y - halfSize.Y) / cellSize);
-            int maxCy = (int)MathF.Floor((pos.Position.Y + halfSize.Y) / cellSize);
+            int minCx = (int)MathF.Floor((pos.Position.X - halfSize.X) / GRID_CELL_SIZE);
+            int maxCx = (int)MathF.Floor((pos.Position.X + halfSize.X) / GRID_CELL_SIZE);
+            int minCy = (int)MathF.Floor((pos.Position.Y - halfSize.Y) / GRID_CELL_SIZE);
+            int maxCy = (int)MathF.Floor((pos.Position.Y + halfSize.Y) / GRID_CELL_SIZE);
         
             for (int cx = minCx; cx <= maxCx; cx++) {
                 for (int cy = minCy; cy <= maxCy; cy++) {
-                    if (!_grid.TryGetValue((cx, cy), out List<int> list)) {
+                    if (!Grid.TryGetValue((cx, cy), out List<int> list)) {
                         list = new List<int>(4);
-                        _grid[(cx, cy)] = list;
+                        Grid[(cx, cy)] = list;
                     }
         
-                    list.Add(idx);
+                    list.Add(index);
                 }
             }
             
-            positions[idx] = entity.Item0;
-            scales[idx] = entity.Item1;
-            collidersArr[idx] = entity.Item2;
-            entityIds[idx] = entity.Id;
-            idx++;
+            Positions[index] = entity.Item0;
+            Scales[index] = entity.Item1;
+            CollidersArr[index] = entity.Item2;
+            EntityIds[index] = entity.Id;
+            index++;
         }
         
-        foreach (var kv in _grid) {
-            var bucket = kv.Value;
+        foreach (KeyValuePair<(int cx, int cy), List<int>> kv in Grid) {
+            List<int> bucket = kv.Value;
             int count = bucket.Count;
         
             for (int i = 0; i < count; i++) {
                 int aIndex = bucket[i];
-        
-                // ref PositionComponent aPos = ref _world.GetComponent<PositionComponent>(aIndex);
-                // ref ScaleComponent aScale = ref _world.GetComponent<ScaleComponent>(aIndex);
-                // ref ColliderComponent aCol = ref _world.GetComponent<ColliderComponent>(aIndex);
 
-                ref PositionComponent aPos = ref positions[aIndex];
-                ref ScaleComponent aScale = ref scales[aIndex];
-                ref ColliderComponent aCol = ref collidersArr[aIndex];
+                ref PositionComponent aPos = ref Positions[aIndex];
+                ref ScaleComponent aScale = ref Scales[aIndex];
+                ref ColliderComponent aCol = ref CollidersArr[aIndex];
         
                 for (int j = i + 1; j < count; j++) {
                     int bIndex = bucket[j];
-        
-                    // Skip the same entity as well as pairs that have already been processed.
-                    // for (int j = 0; j < i + 1; j++) {
-                    //     if (!e1.MoveNext()) {
-                    //         done = true;
-                    //     }
-                    // }
-        
-                    // ref PositionComponent bPos = ref _world.GetComponent<PositionComponent>(bIndex);
-                    // ref ScaleComponent bScale = ref _world.GetComponent<ScaleComponent>(bIndex);
-                    // ref ColliderComponent bCol = ref _world.GetComponent<ColliderComponent>(bIndex);
 
-                    ref PositionComponent bPos = ref positions[bIndex];
-                    ref ScaleComponent bScale = ref scales[bIndex];
-                    ref ColliderComponent bCol = ref collidersArr[bIndex];
+                    ref PositionComponent bPos = ref Positions[bIndex];
+                    ref ScaleComponent bScale = ref Scales[bIndex];
+                    ref ColliderComponent bCol = ref CollidersArr[bIndex];
         
                     switch (aCol.type) {
                         case ColliderType.BOX when bCol.type == ColliderType.BOX: {
@@ -124,7 +132,7 @@ public sealed class CollisionSystem : ISystem {
                             ref BoxCollider bBox = ref bCol.AsBoxCollider();
                             BoxColliderSnapshot a = BoxColliderSnapshot.Create(aPos, aScale, aBox);
                             BoxColliderSnapshot b = BoxColliderSnapshot.Create(bPos, bScale, bBox);
-                            CollidesBoxBox(in a, entityIds[aIndex], in b, entityIds[bIndex]);
+                            CollidesBoxBox(in a, EntityIds[aIndex], in b, EntityIds[bIndex]);
                             break;
                         }
         
@@ -133,7 +141,7 @@ public sealed class CollisionSystem : ISystem {
                             ref CircleCollider bCirc = ref bCol.AsCircleCollider();
                             BoxColliderSnapshot a = BoxColliderSnapshot.Create(aPos, aScale, aBox);
                             CircleColliderSnapshot b = CircleColliderSnapshot.Create(bPos, bScale, bCirc);
-                            CollidesBoxCircle(in a, entityIds[aIndex], in b, entityIds[bIndex]);
+                            CollidesBoxCircle(in a, EntityIds[aIndex], in b, EntityIds[bIndex]);
                             break;
                         }
         
@@ -142,7 +150,7 @@ public sealed class CollisionSystem : ISystem {
                             ref BoxCollider bBox = ref bCol.AsBoxCollider();
                             CircleColliderSnapshot a = CircleColliderSnapshot.Create(aPos, aScale, aCirc);
                             BoxColliderSnapshot b = BoxColliderSnapshot.Create(bPos, bScale, bBox);
-                            CollidesBoxCircle(in b, entityIds[aIndex], in a, entityIds[bIndex]);
+                            CollidesBoxCircle(in b, EntityIds[aIndex], in a, EntityIds[bIndex]);
                             break;
                         }
         
@@ -151,7 +159,7 @@ public sealed class CollisionSystem : ISystem {
                             ref CircleCollider bCirc = ref bCol.AsCircleCollider();
                             CircleColliderSnapshot a = CircleColliderSnapshot.Create(aPos, aScale, aCirc);
                             CircleColliderSnapshot b = CircleColliderSnapshot.Create(bPos, bScale, bCirc);
-                            CollidesCircleCircle(in a, entityIds[aIndex], in b, entityIds[bIndex]);
+                            CollidesCircleCircle(in a, EntityIds[aIndex], in b, EntityIds[bIndex]);
                             break;
                         }
                     }
@@ -161,6 +169,86 @@ public sealed class CollisionSystem : ISystem {
     }
 
     public void OnShutdown() { }
+
+    internal bool IntersectsRayBox(Vector2 rayOrigin, Vector2 rayDir, float rayMaxDistance, int boxIndex,
+        out RaycastHit hit) {
+        hit = default;
+
+        float tMin = 0;
+        float tMax = rayMaxDistance;
+
+        Vector2 colPos = Positions[boxIndex].Position;
+        Vector2 colScale = Scales[boxIndex].Scale;
+        ColliderComponent col = CollidersArr[boxIndex];
+        
+        float w = col.boxCollider.Width * colScale.X;
+        float h = col.boxCollider.Height * colScale.Y;
+
+        float colMinX = MathF.Min(colPos.X, colPos.X + w);
+        float colMaxX = MathF.Max(colPos.X, colPos.X + w);
+        float colMinY = MathF.Min(colPos.Y, colPos.Y + h);
+        float colMaxY = MathF.Max(colPos.Y, colPos.Y + h);
+
+        int hitAxis = -1;
+        
+        // X axis
+        if (rayDir.X != 0) {
+            float inv = 1.0f / rayDir.X;
+            float t1 = (colMinX - rayOrigin.X) * inv;
+            float t2 = (colMaxX - rayOrigin.X) * inv;
+
+            if (t1 > t2) {
+                (t1, t2) = (t2, t1);
+            }
+            
+            float prevMin = tMin;
+            tMin = MathF.Max(tMin, t1);
+            if (tMin != prevMin) {
+                hitAxis = 0;
+            }
+            tMax = MathF.Min(tMax, t2);
+
+            if (tMin > tMax) {
+                return false;
+            }
+        } else if (rayOrigin.X < colMinX || rayOrigin.X > colMaxX) {
+            return false;
+        }
+        
+        // Y Axis
+        if (rayDir.Y != 0) {
+            float inv = 1.0f / rayDir.Y;
+            float t1 = (colMinY - rayOrigin.Y) * inv;
+            float t2 = (colMaxY - rayOrigin.Y) * inv;
+
+            if (t1 > t2) {
+                (t1, t2) = (t2, t1);
+            }
+
+            float prevMin = tMin;
+            tMin = MathF.Max(tMin, t1);
+            if (tMin != prevMin) {
+                hitAxis = 1;
+            }
+            tMax = MathF.Min(tMax, t2);
+
+
+            if (tMin > tMax) {
+                return false;
+            }
+        } else if (rayOrigin.Y < colMinY || rayOrigin.Y > colMaxY) {
+            return false;
+        }
+
+        Vector2 normal = hitAxis switch {
+            0 => rayDir.X > 0 ? -Vector2.UnitX : Vector2.UnitX,
+            1 => rayDir.Y > 0 ? -Vector2.UnitY : Vector2.UnitY,
+            _ => Vector2.Zero
+        };
+
+        hit = new RaycastHit(normal, tMin);
+        return true;
+    }
 
     /// <summary>
     /// Computes a collision between a <see cref="BoxCollider"/> and a <see cref="BoxCollider"/>.

@@ -1,5 +1,8 @@
-﻿namespace LambdaEngine.Physics;
+﻿using System.Numerics;
 
-public readonly ref struct RaycastHit {
-    
+namespace LambdaEngine.Physics;
+
+public readonly ref struct RaycastHit(Vector2 normal, float distance) {
+    public readonly Vector2 Normal = normal;
+    public readonly float Distance = distance;
 }

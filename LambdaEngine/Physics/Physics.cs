@@ -7,7 +7,7 @@ public static class Physics {
     internal static Collision[] collisions = new  Collision[64];
     internal static int collisionCount = 0;
 
-    public static CollisionSystem CollisionSystem { get; } = new();
+    private static CollisionSystem CollisionSystem { get => CollisionSystem.Instance; }
     
     public static ReadOnlySpan<Collision> Collisions() {
         return collisions.AsSpan(0, collisionCount);
@@ -30,7 +30,7 @@ public static class Physics {
     }
 
     public static bool Raycast(Vector2 origin, Vector2 direction, float distance, out RaycastHit hit) {
-        const float cellSize = CollisionSystem.cellSize;
+        const float cellSize = CollisionSystem.GRID_CELL_SIZE;
         
         direction = Vector2.Normalize(direction);
         
@@ -74,12 +74,29 @@ public static class Physics {
             tDeltaY = cellSize / MathF.Abs(direction.Y);   
         }
 
-        Dictionary<(int cx, int cy), List<int>> grid = CollisionSystem._grid;
+        Dictionary<(int cx, int cy), List<int>> grid = CollisionSystem.Grid;
         
         float t = 0;
+        RaycastHit closestHit = new(Vector2.Zero, float.PositiveInfinity);
+        bool hasHit = false;
         while (t <= distance) {
             if (grid.TryGetValue((cellX, cellY), out List<int> colliders)) {
-                // ...?
+                foreach (int colliderIndex in colliders) {
+                    // Don't check further than the already closest hit.
+                    float maxDistance = hasHit ? closestHit.Distance : distance;
+                    if (CollisionSystem.IntersectsRayBox(origin, direction, maxDistance, colliderIndex,
+                            out RaycastHit raycastHit)) {
+                        if (raycastHit.Distance < closestHit.Distance) {
+                            closestHit = raycastHit;
+                            hasHit = true;
+                        }
+                    }   
+                }
+            }
+
+            float nextCellT = MathF.Min(tMaxX, tMaxY);
+            if (hasHit && nextCellT > closestHit.Distance) {
+                break;
             }
 
             if (tMaxX < tMaxY) {
@@ -93,5 +110,8 @@ public static class Physics {
                 tMaxY += tDeltaY;
             }
         }
+
+        hit = closestHit;
+        return hasHit;
     }
 }
