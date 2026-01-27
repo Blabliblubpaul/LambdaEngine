@@ -7,7 +7,7 @@ namespace LambdaEngine;
 public static class WindowManager {
     private static LambdaEngine _engine;
     
-    private static IntPtr _rendererHandle;
+    private static IntPtr gpuDeviceHandle;
     private static IntPtr _windowHandle;
 
     public static int WindowWidth { get; private set; } = 800;
@@ -21,9 +21,8 @@ public static class WindowManager {
         set => _windowHandle = value;
     }
 
-    public static IntPtr RendererHandle {
-        get => _rendererHandle;
-        set => _rendererHandle = value;
+    public static IntPtr GpuDeviceHandle {
+        get => gpuDeviceHandle;
     }
     
     public static bool Initialize(LambdaEngine engine, string appName, string appVersion, string appIdentifier) {
@@ -63,14 +62,25 @@ public static class WindowManager {
             return false;
         }
 
-        _rendererHandle = SDL.CreateRenderer(_windowHandle, null);
-        if (_rendererHandle == IntPtr.Zero) {
-            LDebug.Log($"Failed to create renderer: {SDL.GetError()}", LogLevel.FATAL);
+        var formatFlags = SDL.GPUShaderFormat.SPIRV | SDL.GPUShaderFormat.DXIL | SDL.GPUShaderFormat.MSL;
+        gpuDeviceHandle = SDL.CreateGPUDevice(formatFlags, false, null);
+        if (gpuDeviceHandle == IntPtr.Zero) {
+            LDebug.Log($"Failed to create GPU device: {SDL.GetError()}", LogLevel.FATAL);
             SDL.DestroyWindow(_windowHandle);
             return false;
         }
 
-        SDL.SetRenderVSync(_rendererHandle, 1);
+        if (!SDL.ClaimWindowForGPUDevice(gpuDeviceHandle, _windowHandle)) {
+            LDebug.Log($"Failed to bind window to gpu device: {SDL.GetError()}", LogLevel.FATAL);
+            SDL.DestroyGPUDevice(gpuDeviceHandle);
+            SDL.DestroyWindow(_windowHandle);
+            return false;
+        }
+
+        SDL.SetGPUSwapchainParameters(gpuDeviceHandle, _windowHandle,
+            SDL.GPUSwapchainComposition.SDR,
+            SDL.GPUPresentMode.Immediate
+        );
 
         LDebug.Log("Window created.");
         
@@ -97,7 +107,7 @@ public static class WindowManager {
     }
 
     internal static void DestroyWindow() {
-        SDL.DestroyRenderer(_rendererHandle);
+        SDL.DestroyGPUDevice(gpuDeviceHandle);
         SDL.DestroyWindow(_windowHandle);
         
         SDL.Quit();

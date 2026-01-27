@@ -45,7 +45,7 @@ public class NewRenderSystem : ISystem {
     }
 
     public void OnStartup() {
-        _renderer = WindowManager.RendererHandle;
+        _renderer = WindowManager.GpuDeviceHandle;
     }
 
     public void OnExecute() {
@@ -57,6 +57,8 @@ public class NewRenderSystem : ISystem {
 
         int renderCommandCount = (int)(rectPrimitives.EntityCount + sprites.EntityCount);
         List<RenderCommand> renderCommands = new(renderCommandCount);
+        
+        // TODO: Handle frustum culling
 
         // Process Rect Primitives
         foreach (ComponentRef<PositionComponent, ScaleComponent, RectPrimitiveComponent, ColorComponent> entity in rectPrimitives.GetComponents()) {
@@ -89,7 +91,7 @@ public class NewRenderSystem : ISystem {
             renderCommands.Add(RenderCommand.SpriteCommand(entity.Item2.ZIndex, dest, entity.Item3.Color, spriteData));
         }
         
-        renderCommands.Sort((a, b) => a.ZIndex.CompareTo(b.ZIndex));
+        renderCommands.Sort((a, b) => a.RenderKey.CompareTo(b.RenderKey));
         
         LRendering.SetRenderDrawColor(_renderer, WindowManager.BackgroundColor, 255);
         SDL.RenderClear(_renderer);

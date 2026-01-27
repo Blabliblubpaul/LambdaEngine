@@ -59,7 +59,7 @@ public class RenderSystem : ISystem {
     }
 
     public void OnStartup() {
-        _renderer = WindowManager.RendererHandle;
+        _renderer = WindowManager.GpuDeviceHandle;
     }
 
     // TODO: Replace List<T> with something more efficient

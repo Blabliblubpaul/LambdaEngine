@@ -35,7 +35,7 @@ public class ShaderManager : IStagelessSystem {
     public void OnSetup(LambdaEngine engine, EcsWorld world) { }
     
     public void OnStartup() {
-        _renderer = WindowManager.RendererHandle;
+        _renderer = WindowManager.GpuDeviceHandle;
         
         _shaders = new HashSet<IntPtr>(128);
     }
