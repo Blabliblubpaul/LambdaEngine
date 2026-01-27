@@ -14,17 +14,24 @@ public class TextureManager : IStagelessSystem {
     
     private TextureManager() { }
 
-    public Texture? LoadTextureFromFile(string path) {
-        IntPtr result = Image.LoadTexture(_renderer, path);
+    public Shader? LoadTextureFromFile(string path) {
+        string shaderString = File.ReadAllText(path);
+        
+        IntPtr result = LoadShader(_renderer,  shaderString);
 
         if (result != IntPtr.Zero) {
             _textures.Add(result);
             
-            return new Texture(result);
+            return new Shader(result);
         }
 
         LDebug.Log(SDL.GetError(), LogLevel.ERROR);
         return null;
+    }
+
+    // TODO: look up sdl gpu bindings
+    private static IntPtr LoadShader(IntPtr renderer, string shader) {
+        throw new NotImplementedException();
     }
 
     public void DestroyTexture(Texture texture) {
