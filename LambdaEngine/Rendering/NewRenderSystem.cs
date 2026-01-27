@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using System.Runtime.InteropServices;
 using LambdaEngine.Components.Rendering;
 using LambdaEngine.Components.Rendering.PrimitiveComponents;
@@ -14,18 +14,12 @@ using SDL3;
 
 namespace LambdaEngine.Rendering;
 
-// TODO: Add a Camera and World Space
-// TODO: Add sprite rendering
-// TODO: Add text rendering
-// TODO: Add animation systems
-// TODO: Add sprite atlases
-public class RenderSystem : ISystem {
+public class NewRenderSystem : ISystem {
     private EcsWorld _world;
 
     private IntPtr _renderer;
     
     private EcsQuery _rectPrimitiveQuery;
-    private EcsQuery _circlePrimitiveQuery;
     private EcsQuery _spriteQuery;
 
     public void OnSetup(LambdaEngine engine, EcsWorld world) {
@@ -36,14 +30,6 @@ public class RenderSystem : ISystem {
             .Include<ScaleComponent>()
             // .Include<RotationComponent>()
             .Include<RectPrimitiveComponent>()
-            .Include<ColorComponent>()
-            .Build();
-        
-        _circlePrimitiveQuery = EcsQuery.Create(_world)
-            .Include<PositionComponent>()
-            .Include<ScaleComponent>()
-            // .Include<RotationComponent>()
-            .Include<CirclePrimitiveComponent>()
             .Include<ColorComponent>()
             .Build();
         
@@ -62,7 +48,6 @@ public class RenderSystem : ISystem {
         _renderer = WindowManager.RendererHandle;
     }
 
-    // TODO: Replace List<T> with something more efficient
     public void OnExecute() {
         QueryCollection<PositionComponent, ScaleComponent, RectPrimitiveComponent, ColorComponent> rectPrimitives =
             _rectPrimitiveQuery.Execute<PositionComponent, ScaleComponent, RectPrimitiveComponent, ColorComponent>();
