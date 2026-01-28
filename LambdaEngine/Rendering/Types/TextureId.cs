@@ -3,7 +3,7 @@
 /// <summary>
 /// A 24bit integer used to uniquely identify a loaded texture.
 /// </summary>
-public readonly struct TextureId {
+public readonly struct TextureId : IEquatable<TextureId> {
     private const uint MAX_ID = 0x00FFFFFF;
 
     public static readonly TextureId NO_TEXTURE = new(0);
@@ -16,5 +16,25 @@ public readonly struct TextureId {
         }
         
         Id = id;
+    }
+
+    public bool Equals(TextureId other) {
+        return Id == other.Id;
+    }
+
+    public override bool Equals(object? obj) {
+        return obj is TextureId other && Equals(other);
+    }
+
+    public override int GetHashCode() {
+        return Id.GetHashCode();
+    }
+
+    public static bool operator ==(TextureId left, TextureId right) {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(TextureId left, TextureId right) {
+        return !left.Equals(right);
     }
 }

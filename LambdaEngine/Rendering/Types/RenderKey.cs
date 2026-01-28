@@ -1,6 +1,6 @@
 ﻿namespace LambdaEngine.Rendering;
 
-internal readonly struct RenderKey : IComparable<RenderKey> {
+internal readonly struct RenderKey : IComparable<RenderKey>, IEquatable<RenderKey> {
     // 64bit: |8bit Z-Index|24bit PipelineId|24bit TextureId|8bit RenderType|
     private const ulong PIPELINE_MASK = 0x00FFFFFF00000000;
     private const ulong TEXTURE_MASK  = 0x00000000FFFFFF00;
@@ -34,5 +34,25 @@ internal readonly struct RenderKey : IComparable<RenderKey> {
 
     public int CompareTo(RenderKey other) {
         return Key.CompareTo(other.Key);
+    }
+
+    public bool Equals(RenderKey other) {
+        return Key == other.Key;
+    }
+
+    public override bool Equals(object? obj) {
+        return obj is RenderKey other && Equals(other);
+    }
+
+    public override int GetHashCode() {
+        return Key.GetHashCode();
+    }
+
+    public static bool operator ==(RenderKey left, RenderKey right) {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(RenderKey left, RenderKey right) {
+        return !left.Equals(right);
     }
 }

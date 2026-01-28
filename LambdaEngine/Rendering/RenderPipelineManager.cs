@@ -13,6 +13,11 @@ public class RenderPipelineManager : IStagelessSystem {
     // TODO: Use unmanaged memory
     private List<RenderPipeline> _pipelines;
     
+    // TODO: Clean this up
+    public string DefaultVertexShaderPath;
+    public string DefaultFragmentShaderPath;
+    public IntPtr DefaultPipeline;
+    
     private uint _nextId;
 
     private RenderPipelineManager() {
@@ -32,6 +37,10 @@ public class RenderPipelineManager : IStagelessSystem {
         return id;
     }
 
+    public IntPtr Get(RenderPipelineId id) {
+        throw new NotImplementedException();
+    }
+    
     public void OnSetup(LambdaEngine engine, EcsWorld world) { }
     
     public void OnStartup() { }

@@ -107,8 +107,9 @@ public static class WindowManager {
     }
 
     internal static void DestroyWindow() {
-        SDL.DestroyGPUDevice(gpuDeviceHandle);
+        SDL.ReleaseWindowFromGPUDevice(gpuDeviceHandle, _windowHandle);
         SDL.DestroyWindow(_windowHandle);
+        SDL.DestroyGPUDevice(gpuDeviceHandle);
         
         SDL.Quit();
     }

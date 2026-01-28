@@ -17,10 +17,14 @@ namespace LambdaEngine.Rendering;
 public class NewRenderSystem : ISystem {
     private EcsWorld _world;
 
-    private IntPtr _renderer;
+    private IntPtr _window;
+    private IntPtr _gpuDevice;
     
     private EcsQuery _rectPrimitiveQuery;
     private EcsQuery _spriteQuery;
+    
+    internal int renderCommandCount;
+    internal List<RenderCommand> renderCommands = new(32);
 
     public void OnSetup(LambdaEngine engine, EcsWorld world) {
         _world = world;
@@ -45,18 +49,24 @@ public class NewRenderSystem : ISystem {
     }
 
     public void OnStartup() {
-        _renderer = WindowManager.GpuDeviceHandle;
+        _window = WindowManager.WindowHandle;
+        _gpuDevice = WindowManager.GpuDeviceHandle;
+
+        SdlGpuRendering.InitGpuRendering(_window, _gpuDevice);
     }
 
-    public void OnExecute() {
+    public unsafe void OnExecute() {
         QueryCollection<PositionComponent, ScaleComponent, RectPrimitiveComponent, ColorComponent> rectPrimitives =
             _rectPrimitiveQuery.Execute<PositionComponent, ScaleComponent, RectPrimitiveComponent, ColorComponent>();
         
         QueryCollection<PositionComponent, ScaleComponent, SpriteComponent, ColorComponent> sprites =
             _spriteQuery.Execute<PositionComponent, ScaleComponent, SpriteComponent, ColorComponent>();
 
-        int renderCommandCount = (int)(rectPrimitives.EntityCount + sprites.EntityCount);
-        List<RenderCommand> renderCommands = new(renderCommandCount);
+        renderCommandCount = (int)(rectPrimitives.EntityCount + sprites.EntityCount);
+
+        if (renderCommands.Capacity < renderCommandCount) {
+            renderCommands = new List<RenderCommand>(renderCommandCount);
+        }
         
         // TODO: Handle frustum culling
 
@@ -90,46 +100,14 @@ public class NewRenderSystem : ISystem {
             SpriteRenderCommand spriteData = new(entity.Item2.TextureHandle);
             renderCommands.Add(RenderCommand.SpriteCommand(entity.Item2.ZIndex, dest, entity.Item3.Color, spriteData));
         }
+
+        SdlGpuRendering.InitRenderFrame(renderCommands);
         
-        renderCommands.Sort((a, b) => a.RenderKey.CompareTo(b.RenderKey));
+        SdlGpuRendering.BeginRenderPass();
         
-        LRendering.SetRenderDrawColor(_renderer, WindowManager.BackgroundColor, 255);
-        SDL.RenderClear(_renderer);
-
-        // Render commands
-        Span<RenderCommand> commands = CollectionsMarshal.AsSpan(renderCommands);
-        for (int i = 0; i < renderCommandCount; i++) {
-            ref RenderCommand command = ref commands[i];
-
-            LRendering.SetRenderDrawColor(_renderer, command.Color, 255);
-
-            switch (command.RenderType) { 
-                case RenderCommandType.PRIMITIVE_RECT:
-                    SDL.RenderFillRect(_renderer, command.DestRect);
-                    break;
-                
-                case RenderCommandType.SPRITE: {
-                    Vector2 textureSize = Texture.GetTextureSize(command.SpriteData.TextureHandle);
-
-                    SDL.FRect srcRect = new() {
-                        X = 0,
-                        Y = 0,
-                        W = textureSize.X,
-                        H = textureSize.Y
-                    };
-
-                    LRendering.SetTextureColorMod(command.SpriteData.TextureHandle, command.Color);
-                    SDL.RenderTexture(_renderer, command.SpriteData.TextureHandle, in srcRect, in command.DestRect);
-                    break;
-                }
-                
-                // Unreachable
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
-        SDL.RenderPresent(_renderer);
+        SdlGpuRendering.ProcessRenderCommands();
+        SdlGpuRendering.EndRenderPass();
+        SdlGpuRendering.SubmitGpuCommands();
     }
 
     public void OnShutdown() {

@@ -16,4 +16,8 @@ public struct ColorRgb(byte r, byte g, byte b) {
     public byte R = r;
     public byte G = g;
     public byte B = b;
+
+    public readonly uint ToUint32() {
+        throw new NotImplementedException();
+    }
 }

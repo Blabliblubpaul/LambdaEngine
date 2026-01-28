@@ -38,6 +38,10 @@ public class TextureManager : IStagelessSystem {
         _textures.Remove(texture.Handle);
         SDL.DestroyTexture(texture.Handle);
     }
+    
+    public IntPtr Get(TextureId id) {
+        throw new NotImplementedException();
+    }
 
     public void OnSetup(LambdaEngine engine, EcsWorld world) { }
     
