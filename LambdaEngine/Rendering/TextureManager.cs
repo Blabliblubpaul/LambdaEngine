@@ -42,6 +42,10 @@ public unsafe class TextureManager : IStagelessSystem {
         
         return new Texture(texture, id);
     }
+    
+    public IntPtr Get(TextureId id) {
+        throw new NotImplementedException();
+    }
 
     public void OnSetup(LambdaEngine engine, EcsWorld world) { }
     
