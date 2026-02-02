@@ -1,55 +1,51 @@
 using LambdaEngine.Core;
 using LambdaEngine.Debug;
 using LambdaEngine.Interfaces;
+using LambdaEngine.Rendering.Types;
 using SDL3;
 
 namespace LambdaEngine.Rendering;
 
-public class TextureManager : IStagelessSystem {
+public unsafe class TextureManager : IStagelessSystem {
+    private const int MAX_TEXTURES = 0xFFFFFF;
+    
     public static readonly TextureManager Instance = new();
 
-    private HashSet<IntPtr> _textures = new();
-    
-    private IntPtr _renderer;
+    internal List<IntPtr> _textures = new(256);
+
+    internal bool hadInit;
     
     private TextureManager() { }
 
-    public Shader? LoadTextureFromFile(string path) {
-        string shaderString = File.ReadAllText(path);
-        
-        IntPtr result = LoadShader(_renderer,  shaderString);
-
-        if (result != IntPtr.Zero) {
-            _textures.Add(result);
-            
-            return new Shader(result);
+    /// <summary>
+    /// Registers a texture to be loaded.
+    /// <remarks>Since all textures are loaded by the render system on startup,
+    /// textures may only be registered before.</remarks>
+    /// </summary>
+    /// <param name="path"></param>
+    /// <param name="channels"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
+    public Texture RegisterTexture(string path, int channels = 4) {
+        if (hadInit) {
+            throw new Exception("Unable to register textures; texture init is already done.");
         }
 
-        LDebug.Log(SDL.GetError(), LogLevel.ERROR);
-        return null;
-    }
+        if (_textures.Count >= MAX_TEXTURES) {
+            throw new Exception("Texture count is larger than the maximum number of textures.");
+        }
+        
+        SDL.Surface* texture = RenderingHelper.LoadImage(path, channels);
 
-    // TODO: look up sdl gpu bindings
-    private static IntPtr LoadShader(IntPtr renderer, string shader) {
-        throw new NotImplementedException();
-    }
-
-    public void DestroyTexture(Texture texture) {
-        _textures.Remove(texture.Handle);
-        SDL.DestroyTexture(texture.Handle);
+        _textures.Add(new IntPtr(texture));
+        int id = _textures.Count;
+        
+        return new Texture(texture, id);
     }
 
     public void OnSetup(LambdaEngine engine, EcsWorld world) { }
     
-    public void OnStartup() {
-        _renderer = WindowManager.GpuDeviceHandle;
-        
-        _textures = new HashSet<IntPtr>(128);
-    }
+    public void OnStartup() { }
 
-    public void OnShutdown() {
-        foreach (IntPtr texture in _textures) {
-            SDL.DestroyTexture(texture);
-        }
-    }
+    public void OnShutdown() { }
 }

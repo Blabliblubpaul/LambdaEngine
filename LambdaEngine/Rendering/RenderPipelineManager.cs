@@ -1,6 +1,7 @@
 using LambdaEngine.Core;
 using LambdaEngine.Debug;
 using LambdaEngine.Interfaces;
+using LambdaEngine.Rendering.Types;
 using SDL3;
 
 namespace LambdaEngine.Rendering;

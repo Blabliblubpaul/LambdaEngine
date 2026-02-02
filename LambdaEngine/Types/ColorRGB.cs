@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using LambdaEngine.Rendering.Types;
 
 namespace LambdaEngine.Types;
 
@@ -16,4 +17,8 @@ public struct ColorRgb(byte r, byte g, byte b) {
     public byte R = r;
     public byte G = g;
     public byte B = b;
+    
+    public readonly FColorRGBA AsFColorRgba() {
+        return new FColorRGBA(R / 255f, G / 255f, B / 255f, 1);
+    }
 }

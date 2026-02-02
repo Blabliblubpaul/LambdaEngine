@@ -1,4 +1,4 @@
-﻿namespace LambdaEngine.Rendering;
+﻿namespace LambdaEngine.Rendering.Types;
 
 // Make a handle class
 public readonly struct Shader {

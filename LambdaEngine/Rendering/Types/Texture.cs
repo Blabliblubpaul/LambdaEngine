@@ -1,21 +1,22 @@
-using System.Numerics;
 using SDL3;
 
-namespace LambdaEngine.Rendering;
+namespace LambdaEngine.Rendering.Types;
 
-public class Texture {
-    internal readonly IntPtr Handle;
+public unsafe class Texture {
+    internal readonly SDL.Surface* Handle;
+    
+    public TextureId ID { get; }
 
-    public Vector2 TextureSize {
-        get => GetTextureSize(Handle);
+    public int Width {
+        get => Handle->Width;
+    }
+
+    public int Height {
+        get => Handle->Height;
     }
     
-    internal Texture(IntPtr handle) {
+    internal Texture(SDL.Surface* handle, TextureId id) {
         Handle = handle;
-    }
-
-    internal static Vector2 GetTextureSize(IntPtr textureHandle) {
-        SDL.GetTextureSize(textureHandle, out float w, out float h);
-        return new Vector2(w, h);
+        ID = id;
     }
 }

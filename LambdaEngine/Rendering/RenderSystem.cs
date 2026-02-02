@@ -10,6 +10,7 @@ using LambdaEngine.Core.Queries.QueryCollection;
 using LambdaEngine.Debug;
 using LambdaEngine.Interfaces;
 using LambdaEngine.Rendering.RenderCommands;
+using LambdaEngine.Rendering.Types;
 using SDL3;
 
 namespace LambdaEngine.Rendering;
@@ -91,7 +92,7 @@ public class RenderSystem : ISystem {
         // Process Sprites
         foreach (ComponentRef<PositionComponent, ScaleComponent, SpriteComponent, ColorComponent> entity in sprites.GetComponents()) {
             Vector2 screenPos = Camera.WorldToScreenSpace(entity.Item0.Position);
-            Vector2 screenSize = Texture.GetTextureSize(entity.Item2.TextureHandle) * entity.Item1.Scale * Camera.Zoom;
+            Vector2 screenSize = Texture.GetTextureSize(entity.Item2.TextureId) * entity.Item1.Scale * Camera.Zoom;
             
             SDL.FRect dest = new() {
                 X = screenPos.X - screenSize.X * 0.5f,
@@ -100,7 +101,7 @@ public class RenderSystem : ISystem {
                 H = screenSize.Y
             };
 
-            SpriteRenderCommand spriteData = new(entity.Item2.TextureHandle);
+            SpriteRenderCommand spriteData = new(entity.Item2.TextureId);
             renderCommands.Add(RenderCommand.SpriteCommand(entity.Item2.ZIndex, dest, entity.Item3.Color, spriteData));
         }
         
