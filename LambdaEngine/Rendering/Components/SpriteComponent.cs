@@ -1,5 +1,6 @@
 using LambdaEngine.Core;
 using LambdaEngine.Core.Attributes;
+using LambdaEngine.Rendering;
 using LambdaEngine.Rendering.Types;
 
 namespace LambdaEngine.Components.Rendering;
