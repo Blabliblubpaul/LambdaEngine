@@ -1,7 +1,6 @@
 using LambdaEngine.Core;
 using LambdaEngine.Debug;
 using LambdaEngine.Interfaces;
-using LambdaEngine.Rendering.Types;
 using SDL3;
 
 namespace LambdaEngine.Rendering;
@@ -15,7 +14,7 @@ public class ShaderManager : IStagelessSystem {
     
     private ShaderManager() { }
 
-    public Texture? LoadShaderFromFile(string path) {
+    public Shader? LoadShaderFromFile(string path) {
         IntPtr result = Image.LoadTexture(_renderer, path);
 
         if (result != IntPtr.Zero) {
@@ -26,11 +25,6 @@ public class ShaderManager : IStagelessSystem {
 
         LDebug.Log(SDL.GetError(), LogLevel.ERROR);
         return null;
-    }
-
-    public void DestroyTexture(Texture texture) {
-        _shaders.Remove(texture.Handle);
-        SDL.DestroyTexture(texture.Handle);
     }
 
     public void OnSetup(LambdaEngine engine, EcsWorld world) { }

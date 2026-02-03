@@ -1,4 +1,4 @@
-﻿namespace LambdaEngine.Rendering.Types;
+﻿namespace LambdaEngine.Rendering;
 
 public readonly struct RenderPipeline {
     public readonly Shader VertexShader;

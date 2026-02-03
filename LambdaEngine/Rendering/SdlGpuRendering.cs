@@ -124,12 +124,12 @@ internal static unsafe class SdlGpuRendering {
             Array.Resize(ref _cpuVertexBuffer, _vertexCount * 2);
         }
         
-        Vector2 topLeft = new (cmd.DestRect.X, cmd.DestRect.Y);
-        Vector2 topRight = new (cmd.DestRect.X + cmd.DestRect.W, cmd.DestRect.Y);
-        Vector2 bottomLeft = new (cmd.DestRect.X, cmd.DestRect.Y + cmd.DestRect.H);
-        Vector2 bottomRight = new (cmd.DestRect.X + cmd.DestRect.W, cmd.DestRect.Y + cmd.DestRect.H);
-
-        uint color = cmd.Color.ToUint32();
+        // Vector2 topLeft = new (cmd.DestRect.X, cmd.DestRect.Y);
+        // Vector2 topRight = new (cmd.DestRect.X + cmd.DestRect.W, cmd.DestRect.Y);
+        // Vector2 bottomLeft = new (cmd.DestRect.X, cmd.DestRect.Y + cmd.DestRect.H);
+        // Vector2 bottomRight = new (cmd.DestRect.X + cmd.DestRect.W, cmd.DestRect.Y + cmd.DestRect.H);
+        //
+        // uint color = cmd.Color.ToUint32();
         
         Vector2 uvTL = Vector2.Zero;
         Vector2 uvTR = Vector2.UnitX;
@@ -149,14 +149,14 @@ internal static unsafe class SdlGpuRendering {
         }
         
         // First triangle
-        _cpuVertexBuffer[_vertexCount++] = new GpuVertex(topLeft, uvTL, color);
-        _cpuVertexBuffer[_vertexCount++] = new GpuVertex(bottomLeft, uvBL, color);
-        _cpuVertexBuffer[_vertexCount++] = new GpuVertex(bottomRight, uvBR, color);
+        // _cpuVertexBuffer[_vertexCount++] = new GpuVertex(topLeft, uvTL, color);
+        // _cpuVertexBuffer[_vertexCount++] = new GpuVertex(bottomLeft, uvBL, color);
+        // _cpuVertexBuffer[_vertexCount++] = new GpuVertex(bottomRight, uvBR, color);
         
         // Second triangle
-        _cpuVertexBuffer[_vertexCount++] = new GpuVertex(topLeft, uvTL, color);
-        _cpuVertexBuffer[_vertexCount++] = new GpuVertex(bottomRight, uvBR, color);
-        _cpuVertexBuffer[_vertexCount++] = new GpuVertex(topRight, uvTR, color);
+        // _cpuVertexBuffer[_vertexCount++] = new GpuVertex(topLeft, uvTL, color);
+        // _cpuVertexBuffer[_vertexCount++] = new GpuVertex(bottomRight, uvBR, color);
+        // _cpuVertexBuffer[_vertexCount++] = new GpuVertex(topRight, uvTR, color);
     }
     
     private static void FlushBatch() {

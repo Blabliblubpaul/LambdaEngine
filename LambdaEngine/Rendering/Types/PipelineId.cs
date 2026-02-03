@@ -1,4 +1,4 @@
-﻿namespace LambdaEngine.Rendering.Types;
+﻿namespace LambdaEngine.Rendering;
 
 /// <summary>
 /// A 24bit integer used to uniquely identify a registered gpu pipeline.

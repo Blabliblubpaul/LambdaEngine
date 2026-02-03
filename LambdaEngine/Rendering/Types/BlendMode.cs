@@ -1,4 +1,4 @@
-﻿namespace LambdaEngine.Rendering.Types;
+﻿namespace LambdaEngine.Rendering;
 
 // Make a handle class
 public readonly struct BlendMode {

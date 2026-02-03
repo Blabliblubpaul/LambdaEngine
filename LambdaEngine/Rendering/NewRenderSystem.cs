@@ -9,7 +9,6 @@ using LambdaEngine.Core.Queries.ComponentRef;
 using LambdaEngine.Core.Queries.QueryCollection;
 using LambdaEngine.Debug;
 using LambdaEngine.Interfaces;
-using LambdaEngine.Rendering.Types;
 using SDL3;
 
 namespace LambdaEngine.Rendering;

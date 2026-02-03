@@ -1,4 +1,4 @@
-namespace LambdaEngine.Rendering.Types;
+namespace LambdaEngine.Rendering;
 
 internal readonly struct GpuTexture(IntPtr handle, uint width, uint height) {
     public readonly IntPtr Handle = handle;

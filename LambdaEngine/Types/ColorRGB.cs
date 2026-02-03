@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using LambdaEngine.Rendering.Types;
+using LambdaEngine.Rendering;
 
 namespace LambdaEngine.Types;
 

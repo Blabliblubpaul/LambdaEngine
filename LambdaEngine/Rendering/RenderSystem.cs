@@ -10,7 +10,6 @@ using LambdaEngine.Core.Queries.QueryCollection;
 using LambdaEngine.Debug;
 using LambdaEngine.Interfaces;
 using LambdaEngine.Rendering.RenderCommands;
-using LambdaEngine.Rendering.Types;
 using SDL3;
 
 namespace LambdaEngine.Rendering;

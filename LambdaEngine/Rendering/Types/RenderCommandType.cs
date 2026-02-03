@@ -1,4 +1,4 @@
-namespace LambdaEngine.Rendering.Types;
+namespace LambdaEngine.Rendering;
 
 internal enum RenderCommandType : byte {
     INVALID,

@@ -1,6 +1,6 @@
 using SDL3;
 
-namespace LambdaEngine.Rendering.Types;
+namespace LambdaEngine.Rendering;
 
 public unsafe class Texture {
     internal readonly SDL.Surface* Handle;

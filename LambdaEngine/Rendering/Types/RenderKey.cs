@@ -1,4 +1,4 @@
-﻿namespace LambdaEngine.Rendering.Types;
+﻿namespace LambdaEngine.Rendering;
 
 internal readonly struct RenderKey : IComparable<RenderKey>, IEquatable<RenderKey> {
     // 64bit: |8bit Z-Index|24bit PipelineId|24bit TextureId|8bit RenderType|
@@ -6,7 +6,7 @@ internal readonly struct RenderKey : IComparable<RenderKey>, IEquatable<RenderKe
     private const ulong TEXTURE_MASK  = 0x00000000FFFFFF00;
     private const ulong RENDERTYPE_MASK = 0x00000000000000FF;
 
-    public static readonly RenderKey EMPTY = new(0, RenderPipelineId.INVALID, Types.TextureId.NO_TEXTURE,
+    public static readonly RenderKey EMPTY = new(0, RenderPipelineId.INVALID, TextureId.NO_TEXTURE,
         RenderCommandType.INVALID);
     
     public readonly ulong Key;

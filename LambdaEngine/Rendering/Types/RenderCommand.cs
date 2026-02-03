@@ -2,7 +2,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using LambdaEngine.Types;
 
-namespace LambdaEngine.Rendering.Types;
+namespace LambdaEngine.Rendering;
 
 [StructLayout(LayoutKind.Sequential)]
 internal readonly struct RenderCommand {

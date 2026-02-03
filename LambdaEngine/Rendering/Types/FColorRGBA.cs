@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace LambdaEngine.Rendering.Types;
+namespace LambdaEngine.Rendering;
 
 [StructLayout(LayoutKind.Sequential)]
 public struct FColorRGBA(float r, float g, float b, float a) {
