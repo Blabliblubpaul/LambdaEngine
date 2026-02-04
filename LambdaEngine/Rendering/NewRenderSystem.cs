@@ -51,6 +51,8 @@ public unsafe class NewRenderSystem : ISystem {
         _window = WindowManager.WindowHandle;
         
         SetupDeviceAndSwapchain();
+        
+        ShaderManager.Instance.Init(_device);
     }
 
     public void OnSetup(LambdaEngine engine, EcsWorld world) {
