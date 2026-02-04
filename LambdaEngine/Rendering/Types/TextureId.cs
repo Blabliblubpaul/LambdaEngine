@@ -4,9 +4,10 @@
 /// A 24bit integer used to uniquely identify a loaded texture.
 /// </summary>
 public readonly struct TextureId : IEquatable<TextureId> {
-    private const uint MAX_ID = 0x00FFFFFF;
+    private const uint MAX_ID = 0x00FFFFFF - 1;
+    private const uint NO_TEXTURE_ID = 0xFFFFFFFF;
 
-    public static readonly TextureId NO_TEXTURE = new(0);
+    public static readonly TextureId NO_TEXTURE = new(NO_TEXTURE_ID);
     
     public uint Id { get; }
     
@@ -15,12 +16,16 @@ public readonly struct TextureId : IEquatable<TextureId> {
         get => (int)Id;
     }
 
-    public TextureId(uint id) {
+    private TextureId(uint id) {
+        Id = id;
+    }
+
+    public static TextureId New(uint id) {
         if (id > MAX_ID) {
             throw new ArgumentOutOfRangeException(nameof(id));
         }
-        
-        Id = id;
+
+        return new TextureId(id);
     }
     
     public bool Equals(TextureId other) {
