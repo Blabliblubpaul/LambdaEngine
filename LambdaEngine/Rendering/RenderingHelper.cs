@@ -80,7 +80,7 @@ internal static unsafe class RenderingHelper {
     public static SDL.Surface* LoadImage(string imageFilename, int desiredChannels) {
         SDL.PixelFormat format;
 
-        string fullPath = $"{basePath}/Content/Images/{imageFilename}";
+        string fullPath = $"{basePath}/Assets/Images/{imageFilename}";
 
         IntPtr result = SDL.LoadBMP(fullPath);
         if (result == IntPtr.Zero) {

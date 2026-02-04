@@ -9,12 +9,11 @@ using LambdaEngine.Types;
 namespace Example;
 
 class Program {
+    public static Texture PlayerTexture;
+    
     static void Main() {
         SystemManager.SystemManagerConfigurator configurator = new();
         configurator
-            .RegisterStagelessSystem(TextureManager.Instance, 0)
-            .RegisterStagelessSystem(TextureSystem.Instance, 1)
-            
             .RegisterStagelessSystem<InitSystem>(2)
             
             .RegisterSystem(Input.Instance, SystemStage.FRAME_START, 0)
@@ -33,7 +32,7 @@ class Program {
             
             .RegisterSystem<BulletDestroySystem>(SystemStage.UPDATE, 100)
             
-            .RegisterSystem<RenderSystem>(SystemStage.RENDER, 0)
+            .RegisterSystem(NewRenderSystem.Instance, SystemStage.RENDER, 0)
             .Configure();
         
         WindowManager.SetWindowSize(800, 600);

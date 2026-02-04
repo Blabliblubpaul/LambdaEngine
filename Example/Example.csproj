@@ -12,8 +12,29 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Assets\player.png">
+      <None Update="Assets\Images\player.png">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Assets\Shaders\Compiled\SPIRV\defaultTexture.frag.spv">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Assets\Shaders\Compiled\SPIRV\defaultTexture.vert.spv">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Assets\Shaders\Compiled\MSL\defaultTexture.vert.msl">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Assets\Shaders\Compiled\MSL\defaultTexture.frag.msl">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Assets\Shaders\Compiled\DXIL\defaultTexture.vert.dxil">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Assets\Shaders\Compiled\DXIL\defaultTexture.frag.dxil">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Assets\Images\player.bmp">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
     </ItemGroup>
 
