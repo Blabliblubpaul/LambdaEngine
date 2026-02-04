@@ -1,5 +1,5 @@
 namespace LambdaEngine.Rendering.RenderCommands;
 
-internal readonly struct SpriteRenderCommand(IntPtr textureHandle) {
-    public readonly IntPtr TextureHandle = textureHandle;
+internal readonly struct SpriteRenderCommand(int textureId) {
+    public readonly int TextureId = textureId;
 }

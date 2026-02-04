@@ -6,9 +6,13 @@ using LambdaEngine.Types;
 
 namespace LambdaEngine;
 
+// TODO: Add bootstrap stage for window/gpuDevice creation etc
+
 // TODO: Before/After priorities.
-// TODO: System Base instead of independend interfacs.
+// TODO: System Base instead of independent interfaces.
 // TODO: Freeze configuration after Configure().
+// TODO: Add more specific init/loaded stages
+// TODO: Add system lifetimes/destruction
 public static class SystemManager {
     private static LambdaEngine _engine;
 

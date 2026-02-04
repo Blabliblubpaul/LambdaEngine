@@ -3,6 +3,7 @@ using LambdaEngine.Interfaces;
 
 namespace LambdaEngine.System;
 
+// Make a runtime system before EcsSystem
 public abstract class EcsSystem : ISystem {
     protected EcsWorld World { get; private set; }
 

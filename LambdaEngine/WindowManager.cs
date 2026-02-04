@@ -7,7 +7,6 @@ namespace LambdaEngine;
 public static class WindowManager {
     private static LambdaEngine _engine;
     
-    private static IntPtr _rendererHandle;
     private static IntPtr _windowHandle;
 
     public static int WindowWidth { get; private set; } = 800;
@@ -19,11 +18,6 @@ public static class WindowManager {
     public static IntPtr WindowHandle {
         get => _windowHandle;
         set => _windowHandle = value;
-    }
-
-    public static IntPtr RendererHandle {
-        get => _rendererHandle;
-        set => _rendererHandle = value;
     }
     
     public static bool Initialize(LambdaEngine engine, string appName, string appVersion, string appIdentifier) {
@@ -63,15 +57,6 @@ public static class WindowManager {
             return false;
         }
 
-        _rendererHandle = SDL.CreateRenderer(_windowHandle, null);
-        if (_rendererHandle == IntPtr.Zero) {
-            LDebug.Log($"Failed to create renderer: {SDL.GetError()}", LogLevel.FATAL);
-            SDL.DestroyWindow(_windowHandle);
-            return false;
-        }
-
-        SDL.SetRenderVSync(_rendererHandle, 1);
-
         LDebug.Log("Window created.");
         
         SDL.ShowWindow(_windowHandle);
@@ -97,7 +82,6 @@ public static class WindowManager {
     }
 
     internal static void DestroyWindow() {
-        SDL.DestroyRenderer(_rendererHandle);
         SDL.DestroyWindow(_windowHandle);
         
         SDL.Quit();
