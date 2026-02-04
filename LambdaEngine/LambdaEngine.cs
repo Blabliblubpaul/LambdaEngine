@@ -52,12 +52,20 @@ public class LambdaEngine {
         GameLoop.OnFrameEnd += () => _world.DestroyMarkedEntities();
     }
 
-    public void Run() {
+    /// <summary>
+    /// Creates the window and initializes the rendering backend
+    /// </summary>
+    public void Start() {
         WindowManager.CreateWindow(AppName);
         
         // TODO: DO NOT hardcode this, as it is not replaceable anymore
         NewRenderSystem.Instance.InitSdl();
-        
+    }
+
+    /// <summary>
+    /// Starts the gameloop and systems
+    /// </summary>
+    public void Run() {
         SystemManager.SystemStartup();
         
         GameLoop.StartGameLoop();
