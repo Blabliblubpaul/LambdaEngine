@@ -142,6 +142,10 @@ public unsafe class NewRenderSystem : ISystem {
         */
 
         // Process Sprites
+        
+        // TODO: remove
+        LDebug.Log($"processing sprites. textures: {_textures}");
+        
         foreach (ComponentRef<PositionComponent, ScaleComponent, SpriteComponent, ColorComponent>
                      entity in sprites.GetComponents()) {
             // TODO: figure out world/cmaera/etc translations
@@ -375,5 +379,8 @@ public unsafe class NewRenderSystem : ISystem {
 
         textureManager.hadInit = true;
         textureManager.ReleaseTextures();
+        
+        // TODO: remove
+        LDebug.Log("Gpu textures created.");
     }
 }
