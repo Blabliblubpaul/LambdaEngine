@@ -41,6 +41,11 @@ class Program {
         LambdaEngine.LambdaEngine engine = new("LambdaEngine Example", "0.0.1", "LambdaEngine");
         engine.Initialize(MemSize.FromMBytes(32), Assembly.GetExecutingAssembly());
         
+        engine.Start();
+        
+        PlayerTexture = TextureManager.Instance.RegisterTexture("player.bmp");
+        ShaderManager.Instance.LoadDefaultTextureShaders("defaultTexture.vert", "defaultTexture.frag");
+        
         engine.Run();
     }
 }
