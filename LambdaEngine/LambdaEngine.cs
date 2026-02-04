@@ -2,6 +2,7 @@ using System.Reflection;
 using LambdaEngine.Core;
 using LambdaEngine.Debug;
 using LambdaEngine.Core.Common;
+using LambdaEngine.Rendering;
 
 namespace LambdaEngine;
 
@@ -53,6 +54,9 @@ public class LambdaEngine {
 
     public void Run() {
         WindowManager.CreateWindow(AppName);
+        
+        // TODO: DO NOT hardcode this, as it is not replaceable anymore
+        NewRenderSystem.Instance.InitSdl();
         
         SystemManager.SystemStartup();
         

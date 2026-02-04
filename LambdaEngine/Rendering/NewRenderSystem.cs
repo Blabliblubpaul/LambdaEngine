@@ -13,7 +13,14 @@ using SDL3;
 
 namespace LambdaEngine.Rendering;
 
+// TODO: Add a Camera and World Space
+// TODO: Add sprite rendering
+// TODO: Add text rendering
+// TODO: Add animation systems
+// TODO: Add sprite atlases
 public unsafe class NewRenderSystem : ISystem {
+    public static readonly NewRenderSystem Instance = new();
+    
     private const int MAX_BATCH_VERTICES = 32768;
     private const int MAX_BATCH_SPRITES = 1024;
     private EcsWorld _world;
@@ -36,6 +43,15 @@ public unsafe class NewRenderSystem : ISystem {
 
     private RenderCommand[] _renderCommands;
     private int _renderCommandCount;
+    
+    private NewRenderSystem() { }
+
+    // TODO: Move to system bootstrap
+    internal void InitSdl() {
+        _window = WindowManager.WindowHandle;
+        
+        SetupDeviceAndSwapchain();
+    }
 
     public void OnSetup(LambdaEngine engine, EcsWorld world) {
         _world = world;
@@ -62,21 +78,19 @@ public unsafe class NewRenderSystem : ISystem {
     }
 
     public void OnStartup() {
-        _window = WindowManager.WindowHandle;
+        CreateGpuResources();
         
-        SetupDeviceAndSwapchain();
-        
-        LoadShaders(out IntPtr vertexShader, out IntPtr fragmentShader);
-        
-        CreatePipelines(vertexShader, fragmentShader);
-        
-        ReleaseShaders(vertexShader, fragmentShader);
+        _renderCommands = new RenderCommand[2048];
+    }
+    
+    // TODO: Move to asset loading system stage
+    private void CreateGpuResources() {
+        RenderPipelineManager.Instance.CreateDefaultTexturePipeline(_device, _window);
+        ShaderManager.Instance.ReleaseShaders();
         
         CreateSamplers();
         
-        LoadTextures();
-
-        _renderCommands = new RenderCommand[2048];
+        MoveTexturesToGpu();
     }
 
     public void OnExecute() {
@@ -273,54 +287,6 @@ public unsafe class NewRenderSystem : ISystem {
         SDL.SetGPUSwapchainParameters(_device, _window, SDL.GPUSwapchainComposition.SDR, presentMode);
     }
 
-    // TODO: Do not hardcode shaders, use shadermanager, load arbitrary shaders.
-    private void LoadShaders(out IntPtr vertexShader, out IntPtr fragmentShader) {
-        vertexShader = RenderingHelper.LoadShader(_device, "default.vert", 0, 1, 1, 0);
-        if (vertexShader == IntPtr.Zero) {
-            throw new Exception("Failed to load Vertex Shader.");
-        }
-
-        fragmentShader = RenderingHelper.LoadShader(_device, "default.frag", 1, 0, 0, 0);
-        if (fragmentShader == IntPtr.Zero) {
-            throw new Exception("Failed to load Fragment Shader.");
-        }
-    }
-
-    // TODO: Create pipelines based on registered pipelines.
-    private void CreatePipelines(IntPtr vertexShader, IntPtr fragmentShader) {
-        SDL.GPUColorTargetDescription colorTargetDescription = new() {
-            Format = SDL.GetGPUSwapchainTextureFormat(_device, _window),
-            BlendState = new() {
-                EnableBlend = true,
-                AlphaBlendOp = SDL.GPUBlendOp.Add,
-                ColorBlendOp = SDL.GPUBlendOp.Add,
-                SrcColorBlendFactor = SDL.GPUBlendFactor.SrcAlpha,
-                SrcAlphaBlendFactor = SDL.GPUBlendFactor.SrcAlpha,
-                DstColorBlendFactor = SDL.GPUBlendFactor.OneMinusSrcAlpha,
-                DstAlphaBlendFactor = SDL.GPUBlendFactor.OneMinusSrcAlpha,
-            }
-        };
-
-        _pipeline = SDL.CreateGPUGraphicsPipeline(_device, new() {
-            TargetInfo = new() {
-                NumColorTargets = 1,
-                ColorTargetDescriptions = new IntPtr(&colorTargetDescription),
-            },
-            PrimitiveType = SDL.GPUPrimitiveType.TriangleList,
-            VertexShader = vertexShader,
-            FragmentShader = fragmentShader,
-        });
-        if (_pipeline == IntPtr.Zero) {
-            throw new Exception("Failed to create pipeline.");
-        }
-    }
-
-    // TODO: Release registered shaders, see LoadShaders.
-    private void ReleaseShaders(IntPtr vertexShader, IntPtr fragmentShader) {
-        SDL.ReleaseGPUShader(_device, vertexShader);
-        SDL.ReleaseGPUShader(_device, fragmentShader);
-    }
-
     // TODO: Create a set of default samplers, allow user defined samplers.
     private void CreateSamplers() {
         _sampler = SDL.CreateGPUSampler(_device, new() {
@@ -333,7 +299,7 @@ public unsafe class NewRenderSystem : ISystem {
         });
     }
 
-    private void LoadTextures() {
+    private void MoveTexturesToGpu() {
         TextureManager textureManager = TextureManager.Instance;
         int textureCount = textureManager._textures.Count;
 
@@ -398,8 +364,6 @@ public unsafe class NewRenderSystem : ISystem {
             }, false);
 
             offset += _textures[i].Width * _textures[i].Height * 4;
-            
-            SDL.DestroySurface(new IntPtr(texture));
         }
         
         SDL.EndGPUCopyPass(copyPass);
@@ -408,6 +372,6 @@ public unsafe class NewRenderSystem : ISystem {
         SDL.ReleaseGPUTransferBuffer(_device, textureTransferBuffer);
 
         textureManager.hadInit = true;
-        textureManager._textures = null;
+        textureManager.ReleaseTextures();
     }
 }

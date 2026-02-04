@@ -1,3 +1,4 @@
+using LambdaEngine.Debug;
 using SDL3;
 
 namespace LambdaEngine.Rendering;
@@ -19,7 +20,8 @@ internal static unsafe class RenderingHelper {
             stage = SDL.GPUShaderStage.Fragment;
         }
         else {
-            throw new ArgumentException("Invalid file; not a shader.");
+            LDebug.Log($"Unable to load shader \"{filename}\": invalid file format.", LogLevel.ERROR);
+            return IntPtr.Zero;
         }
 
         string fullPath;
@@ -28,17 +30,17 @@ internal static unsafe class RenderingHelper {
         string entrypoint;
 
         if ((backendFormats & SDL.GPUShaderFormat.SPIRV) == SDL.GPUShaderFormat.SPIRV) {
-            fullPath = $"{basePath}/Content/Shaders/Compiled/SPIRV/{filename}.spv";
+            fullPath = $"{basePath}/Assets/Shaders/Compiled/SPIRV/{filename}.spv";
             format = SDL.GPUShaderFormat.SPIRV;
             entrypoint = "main";
         }
         else if ((backendFormats & SDL.GPUShaderFormat.MSL) == SDL.GPUShaderFormat.MSL) {
-            fullPath = $"{basePath}/Content/Shaders/Compiled/MSL/{filename}.msl";
+            fullPath = $"{basePath}/Assets/Shaders/Compiled/MSL/{filename}.msl";
             format = SDL.GPUShaderFormat.MSL;
             entrypoint = "main0";
         }
         else if ((backendFormats & SDL.GPUShaderFormat.DXIL) == SDL.GPUShaderFormat.DXIL) {
-            fullPath = $"{basePath}/Content/Shaders/Compiled/DXIL/{filename}.dxil";
+            fullPath = $"{basePath}/Assets/Shaders/Compiled/DXIL/{filename}.dxil";
             format = SDL.GPUShaderFormat.DXIL;
             entrypoint = "main";
         }
@@ -50,7 +52,7 @@ internal static unsafe class RenderingHelper {
         nuint codeSize;
         IntPtr code = SDL.LoadFile(fullPath, out codeSize);
         if (code == IntPtr.Zero) {
-            SDL.Log($"Failed to load shader from disk! {fullPath}");
+            LDebug.Log($"Failed to read shader file \"{fullPath}\": {SDL.GetError()}", LogLevel.ERROR);
             return IntPtr.Zero;
         }
 
@@ -68,7 +70,7 @@ internal static unsafe class RenderingHelper {
 
         IntPtr shader = SDL.CreateGPUShader(device, in shaderInfo);
         if (shader == IntPtr.Zero) {
-            SDL.Log("Failed to create shader!");
+            LDebug.Log($"Failed to create shader \"{fullPath}\": {SDL.GetError()}", LogLevel.ERROR);
             return IntPtr.Zero;
         }
 
