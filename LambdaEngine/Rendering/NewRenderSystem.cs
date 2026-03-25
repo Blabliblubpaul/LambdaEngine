@@ -142,16 +142,13 @@ public unsafe class NewRenderSystem : ISystem {
         */
 
         // Process Sprites
-        
-        // TODO: remove
-        LDebug.Log($"processing sprites. textures: {_textures}");
-        
         foreach (ComponentRef<PositionComponent, ScaleComponent, SpriteComponent, ColorComponent>
                      entity in sprites.GetComponents()) {
             // TODO: figure out world/cmaera/etc translations
             Vector2 screenPos = Camera.WorldToScreenSpace(entity.Item0.Position);
 
             int textureId = entity.Item2.TextureId.AsInt32;
+            // TODO: Fix out of bounds bug.
             Vector2 textureSize = new(_textures[textureId].Width, _textures[textureId].Height);
             Vector2 screenSize = textureSize * entity.Item1.Scale * Camera.Zoom;
 
@@ -379,8 +376,5 @@ public unsafe class NewRenderSystem : ISystem {
 
         textureManager.hadInit = true;
         textureManager.ReleaseTextures();
-        
-        // TODO: remove
-        LDebug.Log("Gpu textures created.");
     }
 }
