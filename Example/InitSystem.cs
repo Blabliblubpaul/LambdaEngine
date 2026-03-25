@@ -27,21 +27,21 @@ public class InitSystem : IStagelessSystem {
     }
 
     public void OnStartup() {
-        // ArchetypeHandle blockArchetype = _world.GetOrCreateArchetype(typeof(PositionComponent), typeof(ScaleComponent), typeof(VelocityComponent),
-        //     typeof(ColliderComponent), typeof(RectPrimitiveComponent), typeof(ColorComponent), typeof(BlockTagComponent));
+        ArchetypeHandle enemyArchetype = _world.GetOrCreateArchetype(typeof(PositionComponent), typeof(ScaleComponent), typeof(VelocityComponent),
+            typeof(ColliderComponent), typeof(SpriteComponent), typeof(ColorComponent), typeof(EnemyTagComponent));
         
         ArchetypeHandle playerArchetype = _world.GetOrCreateArchetype(typeof(PositionComponent), typeof(ScaleComponent), typeof(VelocityComponent),
             typeof(ColliderComponent), typeof(SpriteComponent), typeof(PlayerTagComponent), typeof(ColorComponent));
         
         // ArchetypeHandle staticBlockArchetype = _world.GetOrCreateArchetype(typeof(PositionComponent), typeof(ScaleComponent), typeof(ColliderComponent),
-        //     typeof(RectPrimitiveComponent), typeof(ColorComponent), typeof(BlockTagComponent));
+        //     typeof(RectPrimitiveComponent), typeof(ColorComponent), typeof(EnemyTagComponent));
         
         int player = _world.CreateEntity(playerArchetype);
         _world.SetComponent(player, new PositionComponent(0, 0));
         _world.SetComponent(player, new ScaleComponent(0.75f, 0.75f));
         _world.SetComponent(player, new ColliderComponent(new BoxCollider(50, 50)));
-        _world.SetComponent(player, new ColorComponent(new ColorRgb(0, 0, 0)));
-        _world.SetComponent(player, new SpriteComponent(Program.PlayerTexture));
+        _world.SetComponent(player, new ColorComponent(new ColorRgb(255, 255, 255)));
+        _world.SetComponent(player, new SpriteComponent(Program.PlayerTexture, -10));
         // _world.SetComponent(player, new RectPrimitiveComponent(50, 50));
         
         _player = player;
@@ -53,16 +53,16 @@ public class InitSystem : IStagelessSystem {
         // _world.SetComponent(staticBlock, new ColorComponent(ColorRgb.White));
         // _world.SetComponent(staticBlock, new RectPrimitiveComponent(200, 50, -1));
         //
-        // for (int i = 0; i < 10; i++) {
-        //     int entity = _world.CreateEntity(blockArchetype);
-        //     
-        //     _world.SetComponent(entity, new PositionComponent((i * 35) - 400, (-i * 35) + 400));
-        //     _world.SetComponent(entity, new ScaleComponent(1, 1));
-        //     _world.SetComponent(entity, new ColliderComponent(new BoxCollider(50, 50)));
-        //     _world.SetComponent(entity, new VelocityComponent(60 * MathF.Sqrt(i + 1), -60 * MathF.Sqrt(i + 1)));
-        //     _world.SetComponent(entity, new ColorComponent(new ColorRgb((byte)Random.Shared.Next(50, 200), (byte)Random.Shared.Next(50, 200), (byte)Random.Shared.Next(50, 200))));
-        //     _world.SetComponent(entity, new RectPrimitiveComponent(50, 50));
-        // }
+        for (int i = 0; i < 10; i++) {
+            int entity = _world.CreateEntity(enemyArchetype);
+            
+            _world.SetComponent(entity, new PositionComponent((i * 35) - 400, (-i * 35) + 400));
+            _world.SetComponent(entity, new ScaleComponent(1, 1));
+            _world.SetComponent(entity, new ColliderComponent(new BoxCollider(50, 50)));
+            _world.SetComponent(entity, new VelocityComponent(60 * MathF.Sqrt(i + 1), -60 * MathF.Sqrt(i + 1)));
+            _world.SetComponent(entity, new ColorComponent(new ColorRgb((byte)Random.Shared.Next(50, 200), (byte)Random.Shared.Next(50, 200), (byte)Random.Shared.Next(50, 200))));
+            _world.SetComponent(entity, new SpriteComponent(Program.EnemyTexture));
+        }
     }
 
     public void OnShutdown() { }

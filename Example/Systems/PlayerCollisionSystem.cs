@@ -19,7 +19,7 @@ public class PlayerCollisionSystem : EcsSystem {
         bool collided = false;
         foreach (ref readonly Collision collision in Physics.Collisions()) {
             if (collision.HasParticipant(_player) &&
-                Physics.IsCollisionParticipant<BlockTagComponent>(World, collision, out _)) {
+                Physics.IsCollisionParticipant<EnemyTagComponent>(World, collision, out _)) {
                 collided = true;
             }
         }

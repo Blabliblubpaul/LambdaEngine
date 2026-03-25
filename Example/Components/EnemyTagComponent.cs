@@ -4,4 +4,4 @@ using LambdaEngine.Core.Attributes;
 namespace Example.Components;
 
 [EcsComponent]
-public struct BlockTagComponent : IEcsComponent { }
+public struct EnemyTagComponent : IEcsComponent { }

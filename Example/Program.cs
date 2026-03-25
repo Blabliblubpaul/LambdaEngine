@@ -10,6 +10,7 @@ namespace Example;
 
 class Program {
     public static Texture PlayerTexture;
+    public static Texture EnemyTexture;
     
     static void Main() {
         SystemManager.SystemManagerConfigurator configurator = new();
@@ -26,7 +27,7 @@ class Program {
             .RegisterSystem<CamControlSystem>(SystemStage.UPDATE, 1)
             .RegisterSystem<PlayerShootSystem>(SystemStage.UPDATE, 2)
             .RegisterSystem<MovementSystem>(SystemStage.UPDATE, 3)
-            .RegisterSystem<BlockMovementSystem>(SystemStage.UPDATE, 4)
+            .RegisterSystem<EnemyMovementSystem>(SystemStage.UPDATE, 4)
             .RegisterSystem<BulletSystem>(SystemStage.UPDATE, 5)
             .RegisterSystem<PlayerCollisionSystem>(SystemStage.UPDATE, 6)
             
@@ -44,6 +45,7 @@ class Program {
         engine.Start();
         
         PlayerTexture = TextureManager.Instance.RegisterTexture("player.bmp");
+        EnemyTexture = TextureManager.Instance.RegisterTexture("enemy.bmp");
         ShaderManager.Instance.LoadDefaultTextureShaders("defaultTexture.vert", "defaultTexture.frag");
         
         engine.Run();

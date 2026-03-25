@@ -9,7 +9,7 @@ using LambdaEngine.System;
 
 namespace Example.Systems;
 
-public class BlockMovementSystem : EcsSystem {
+public class EnemyMovementSystem : EcsSystem {
     EcsQuery _query;
     
     public override void OnSetup(LambdaEngine.LambdaEngine engine, EcsWorld world) {
@@ -17,7 +17,7 @@ public class BlockMovementSystem : EcsSystem {
         
         _query = EcsQuery.Create(World)
             .Include<PositionComponent>()
-            .Include<BlockTagComponent>()
+            .Include<EnemyTagComponent>()
             .Build();
     }
 

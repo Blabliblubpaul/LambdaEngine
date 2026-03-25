@@ -10,7 +10,7 @@ public class BulletSystem : EcsSystem {
     public override void OnExecute() {
         foreach (ref readonly Collision entity in Physics.Collisions()) {
             if (!(Physics.IsCollisionParticipant<BulletTagComponent>(World, entity, out _) &&
-                 Physics.IsCollisionParticipant<BlockTagComponent>(World, entity, out _))) {
+                 Physics.IsCollisionParticipant<EnemyTagComponent>(World, entity, out _))) {
                 continue;
             }
 
