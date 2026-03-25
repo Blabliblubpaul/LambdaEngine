@@ -93,6 +93,8 @@ public unsafe class NewRenderSystem : ISystem {
         CreateSamplers();
         
         MoveTexturesToGpu();
+        
+        CreateSpriteDataBuffers();
     }
 
     public void OnExecute() {
@@ -163,11 +165,11 @@ public unsafe class NewRenderSystem : ISystem {
 
         IntPtr cmdBuf = SDL.AcquireGPUCommandBuffer(_device);
         if (cmdBuf == IntPtr.Zero) {
-            throw new Exception("Failed to acquire command buffer.");
+            throw new Exception("Failed to acquire GPU command buffer.");
         }
 
         if (!SDL.WaitAndAcquireGPUSwapchainTexture(cmdBuf, _window, out IntPtr swapchainTexture, out _, out _)) {
-            throw new Exception("Failed to acquire swapchain texture.");
+            throw new Exception("Failed to acquire GPU swapchain texture.");
         }
 
         if (swapchainTexture == IntPtr.Zero) {
@@ -182,40 +184,49 @@ public unsafe class NewRenderSystem : ISystem {
             ClearColor = new SDL.FColor(0, 0, 0, 1)
         };
 
-        int rcIndex = 0;
+        int renderCommandIndex = 0;
 
         RenderKey currentKey = RenderKey.EMPTY;
-        while (rcIndex < _renderCommands.Length) {
-            currentKey = _renderCommands[rcIndex].RenderKey;
-            int start = rcIndex;
-            int end = rcIndex;
+        
+        // TODO: Assign/(create?) correct pipeline based on renderkey
+        _pipeline = RenderPipelineManager.Instance._defaultTexturePipeline;
+        while (renderCommandIndex < _renderCommandCount) {
+            currentKey = _renderCommands[renderCommandIndex].RenderKey;
+            int start = renderCommandIndex++;
+            int end = start + 1;
 
             int batchSize = 1;
 
-            do {
+            while (renderCommandIndex < _renderCommandCount && currentKey == _renderCommands[renderCommandIndex++].RenderKey && batchSize < MAX_BATCH_SPRITES) {
                 end++;
                 batchSize++;
-            } while (currentKey == _renderCommands[rcIndex++].RenderKey && batchSize < MAX_BATCH_SPRITES);
+            }
             
             // TODO: Currently one render pass is used per batch. Better: upload multiple batches before rendering.
             SpriteInstance* dataPtr =
                 (SpriteInstance*)SDL.MapGPUTransferBuffer(_device, _spriteDataTransferBuffer, true);
-            
-            for (int i = start; i <= end; i++) {
-                int texture = 0; // TODO: use textureId
-                dataPtr[i].Position = _renderCommands[i].Position.AsVector3(); // TODO: use sprite pos
-                dataPtr[i].Rotation = _renderCommands[i].Rotation;
-                dataPtr[i].W = _renderCommands[i].ScreenSize.X;
-                dataPtr[i].H = _renderCommands[i].ScreenSize.Y;
+
+            if (dataPtr == null) {
+                throw new Exception($"Failed to map GPU transfer buffer: {SDL.GetError()}");
+            }
+
+            int dataIndex = 0;
+            for (int i = start; i < end; i++) {
+                dataPtr[dataIndex].Position = _renderCommands[i].Position.AsVector3(); // TODO: use sprite pos
+                dataPtr[dataIndex].Rotation = _renderCommands[i].Rotation;
+                dataPtr[dataIndex].W = _renderCommands[i].ScreenSize.X;
+                dataPtr[dataIndex].H = _renderCommands[i].ScreenSize.Y;
                 
                 // Use the entire texture.
-                dataPtr[i].TexU = 0;
-                dataPtr[i].TexV = 0;
-                dataPtr[i].TexW = 1;
-                dataPtr[i].TexH = 1;
+                dataPtr[dataIndex].TexU = 0;
+                dataPtr[dataIndex].TexV = 0;
+                dataPtr[dataIndex].TexW = 1;
+                dataPtr[dataIndex].TexH = 1;
                 
                 // TODO: Use sprite color
-                dataPtr[i].Color = _renderCommands[i].Color.AsFColorRgba();
+                dataPtr[dataIndex].Color = _renderCommands[i].Color.AsFColorRgba();
+                
+                dataIndex++;
             }
 
             SDL.UnmapGPUTransferBuffer(_device, _spriteDataTransferBuffer);
@@ -244,16 +255,16 @@ public unsafe class NewRenderSystem : ISystem {
             
             SDL.BindGPUVertexStorageBuffers(renderPass, 0, buffers, 1);
             
-            // TODO: usee correct batch texture
+            // TODO: use correct batch texture
             SDL.GPUTextureSamplerBinding tsBinding = new() {
                 Texture = _textures[currentKey.TextureId.AsInt32].Handle,
                 Sampler = _sampler
             };
             
             SDL.BindGPUFragmentSamplers(renderPass, 0, new IntPtr(&tsBinding), 1);
+            // TODO: Consider pushing the camera data only once per frame
             SDL.PushGPUVertexUniformData(cmdBuf, 0, new IntPtr(&cameraMatrix), (uint)sizeof(Matrix4x4));
             
-            // TODO: Use batch sizee
             SDL.DrawGPUPrimitives(renderPass, (uint)(batchSize * 6), 1, 0, 0);
 
             SDL.EndGPURenderPass(renderPass);
@@ -376,5 +387,26 @@ public unsafe class NewRenderSystem : ISystem {
 
         textureManager.hadInit = true;
         textureManager.ReleaseTextures();
+    }
+
+    private void CreateSpriteDataBuffers() {
+        _spriteDataTransferBuffer = SDL.CreateGPUTransferBuffer(_device, new() {
+            Usage = SDL.GPUTransferBufferUsage.Upload,
+            Size = (uint)sizeof(SpriteInstance) * MAX_BATCH_SPRITES
+        });
+        
+        if (_spriteDataTransferBuffer == IntPtr.Zero) {
+            throw new Exception($"Failed to create GPU transfer buffer: {SDL.GetError()}");
+        }
+
+        // TODO: Ensure vec3/vec4 are 16byte aligned?
+        _spriteDataBuffer = SDL.CreateGPUBuffer(_device, new() {
+            Usage = SDL.GPUBufferUsageFlags.GraphicsStorageRead,
+            Size = (uint)sizeof(SpriteInstance) * MAX_BATCH_SPRITES
+        });
+        
+        if (_spriteDataBuffer == IntPtr.Zero) {
+            throw new Exception($"Failed to create GPU buffer: {SDL.GetError()}");
+        }
     }
 }

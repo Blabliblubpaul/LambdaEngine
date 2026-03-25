@@ -46,6 +46,7 @@ public unsafe class RenderPipelineManager {
             VertexShader = vertexShader,
             FragmentShader = fragmentShader,
         });
+        
         if (_defaultTexturePipeline == IntPtr.Zero) {
             throw new Exception("Failed to create pipeline.");
         }
