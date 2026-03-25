@@ -138,6 +138,7 @@ public unsafe struct ComponentSet64 {
         return true;
     }
 
+    // TODO: Potentially use manual compares over Memcmp for slight performance boost, needs testing
     public readonly bool Compare(in ComponentSet64 other) {
         if (other._componentCount != _componentCount) {
             return false;
