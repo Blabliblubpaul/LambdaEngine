@@ -176,13 +176,22 @@ public unsafe class NewRenderSystem : ISystem {
             return;
         }
         
-        SDL.GPUColorTargetInfo colorTargetInfo = new() {
+        SDL.GPUColorTargetInfo clearColorTargetInfo = new() {
             Texture = swapchainTexture,
             Cycle = false,
             LoadOp = SDL.GPULoadOp.Clear,
             StoreOp = SDL.GPUStoreOp.Store,
             ClearColor = new SDL.FColor(0, 0, 0, 1)
         };
+        
+        SDL.GPUColorTargetInfo colorTargetInfo = new() {
+            Texture = swapchainTexture,
+            Cycle = false,
+            LoadOp = SDL.GPULoadOp.Load,
+            StoreOp = SDL.GPUStoreOp.Store
+        };
+        
+        bool firstRenderPass = true;
 
         int renderCommandIndex = 0;
 
@@ -197,9 +206,10 @@ public unsafe class NewRenderSystem : ISystem {
 
             int batchSize = 1;
 
-            while (renderCommandIndex < _renderCommandCount && currentKey == _renderCommands[renderCommandIndex++].RenderKey && batchSize < MAX_BATCH_SPRITES) {
+            while (renderCommandIndex < _renderCommandCount && currentKey == _renderCommands[renderCommandIndex + 1].RenderKey && batchSize < MAX_BATCH_SPRITES) {
                 end++;
                 batchSize++;
+                renderCommandIndex++;
             }
             
             // TODO: Currently one render pass is used per batch. Better: upload multiple batches before rendering.
@@ -244,8 +254,15 @@ public unsafe class NewRenderSystem : ISystem {
             }, true);
             
             SDL.EndGPUCopyPass(copyPass);
-            
-            IntPtr renderPass = SDL.BeginGPURenderPass(cmdBuf, new IntPtr(&colorTargetInfo), 1, IntPtr.Zero);
+
+            IntPtr renderPass;
+            if (firstRenderPass) {
+                 renderPass = SDL.BeginGPURenderPass(cmdBuf, new IntPtr(&clearColorTargetInfo), 1, IntPtr.Zero);
+                 firstRenderPass = false;
+            }
+            else {
+                 renderPass = SDL.BeginGPURenderPass(cmdBuf, new IntPtr(&colorTargetInfo), 1, IntPtr.Zero);
+            }
             SDL.BindGPUGraphicsPipeline(renderPass, _pipeline);
             
             // TODO: If one batch exceeds buffer size, maybe use multiple buffers?
