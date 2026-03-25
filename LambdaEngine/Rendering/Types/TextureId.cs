@@ -5,7 +5,7 @@
 /// </summary>
 public readonly struct TextureId : IEquatable<TextureId> {
     private const uint MAX_ID = 0x00FFFFFF - 1;
-    private const uint NO_TEXTURE_ID = 0xFFFFFFFF;
+    private const uint NO_TEXTURE_ID = 0x00FFFFFF;
 
     public static readonly TextureId NO_TEXTURE = new(NO_TEXTURE_ID);
     
@@ -16,7 +16,7 @@ public readonly struct TextureId : IEquatable<TextureId> {
         get => (int)Id;
     }
 
-    private TextureId(uint id) {
+    internal TextureId(uint id) {
         Id = id;
     }
 
