@@ -37,9 +37,9 @@ public unsafe class TextureManager {
         SDL.Surface* texture = RenderingHelper.LoadImage(path, channels);
 
         _textures.Add(new IntPtr(texture));
-        uint id = (uint)_textures.Count;
+        uint id = (uint)_textures.Count - 1;
         
-        return new Texture(texture, new TextureId(id));
+        return new Texture(texture, TextureId.New(id));
     }
 
     internal void ReleaseTextures() {

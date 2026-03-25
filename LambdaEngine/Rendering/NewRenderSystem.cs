@@ -142,6 +142,8 @@ public unsafe class NewRenderSystem : ISystem {
         */
 
         // Process Sprites
+        RenderPipelineId spritePipelineId = RenderPipelineId.New(0);
+        
         foreach (ComponentRef<PositionComponent, ScaleComponent, SpriteComponent, ColorComponent>
                      entity in sprites.GetComponents()) {
             // TODO: figure out world/cmaera/etc translations
@@ -152,7 +154,7 @@ public unsafe class NewRenderSystem : ISystem {
             Vector2 textureSize = new(_textures[textureId].Width, _textures[textureId].Height);
             Vector2 screenSize = textureSize * entity.Item1.Scale * Camera.Zoom;
 
-            RenderKey key = new(entity.Item2.ZIndex, new RenderPipelineId(0), entity.Item2.TextureId, RenderCommandType.SPRITE);
+            RenderKey key = new(entity.Item2.ZIndex, spritePipelineId, entity.Item2.TextureId, RenderCommandType.SPRITE);
             _renderCommands[renderCmdIndex++] = new(key, screenPos, screenSize, 0, entity.Item3.Color);
         }
     }

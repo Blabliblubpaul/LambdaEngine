@@ -16,11 +16,11 @@ internal readonly struct RenderKey : IComparable<RenderKey>, IEquatable<RenderKe
     }
 
     public RenderPipelineId PipelineId {
-        get => new((uint)((Key & PIPELINE_MASK) >> 32));
+        get => RenderPipelineId.NewUnchecked((uint)((Key & PIPELINE_MASK) >> 32));
     }
 
     public TextureId TextureId {
-        get => new((uint)((Key & TEXTURE_MASK) >> 8));
+        get => TextureId.NewUnchecked((uint)((Key & TEXTURE_MASK) >> 8));
     }
 
     public RenderCommandType RenderType {
