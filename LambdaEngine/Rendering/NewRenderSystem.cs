@@ -167,21 +167,6 @@ public unsafe class NewRenderSystem : ISystem {
             collector.Execute();
         }
 
-        return;
-        
-        QueryCollection<PositionComponent, ScaleComponent, RectPrimitiveComponent, ColorComponent> rectPrimitives =
-            _rectPrimitiveQuery.Execute<PositionComponent, ScaleComponent, RectPrimitiveComponent, ColorComponent>();
-
-        QueryCollection<PositionComponent, ScaleComponent, SpriteComponent, ColorComponent> sprites =
-            _spriteQuery.Execute<PositionComponent, ScaleComponent, SpriteComponent, ColorComponent>();
-
-        // _renderCommandCount = (int)(rectPrimitives.EntityCount + sprites.EntityCount);
-        // if (_renderCommands.Length < _renderCommandCount) {
-        //     _renderCommands = new RenderCommand[_renderCommandCount];
-        // }
-
-        int renderCmdIndex = 0;
-
         // TODO: Handle frustum culling
 
         // TODO: implement rect primitives
@@ -202,21 +187,6 @@ public unsafe class NewRenderSystem : ISystem {
             renderCommands.Add(RenderCommand.RectPrimitiveCommand(entity.Item2.ZIndex, dest, entity.Item3.Color));
         }
         */
-
-        // Process Sprites
-        foreach (ComponentRef<PositionComponent, ScaleComponent, SpriteComponent, ColorComponent>
-                     entity in sprites.GetComponents()) {
-            // TODO: figure out world/cmaera/etc translations
-            Vector2 screenPos = Camera.WorldToScreenSpace(entity.Item0.Position);
-
-            int textureId = entity.Item2.TextureId.AsInt32;
-            // TODO: Fix out of bounds bug.
-            Vector2 textureSize = new(_textures[textureId].Width, _textures[textureId].Height);
-            Vector2 screenSize = textureSize * entity.Item1.Scale * Camera.Zoom;
-
-            RenderKey key = new(entity.Item2.ZIndex, RenderPipelineId.New(0), entity.Item2.TextureId, RenderCommandType.SPRITE);
-            // _renderCommands[renderCmdIndex++] = new(key, screenPos, screenSize, 0, entity.Item3.Color);
-        }
     }
 
     private void ProcessRenderCommands() {
@@ -252,9 +222,25 @@ public unsafe class NewRenderSystem : ISystem {
         };
         
         // TODO: Render Passes: World, Transparent (world), UI, Debug
-        // TODO: Only do one gpu render pass per logical render pass
+
+        RenderPassContext worldContext = new(CollectionsMarshal.AsSpan(_worldRenderCommands), clearColorTargetInfo, cameraMatrix, cmdBuf, swapchainTexture);
+        RenderPassContext transparentContext = new(CollectionsMarshal.AsSpan(_transparentRenderCommands), colorTargetInfo, cameraMatrix, cmdBuf, swapchainTexture);
+        RenderPassContext uiContext = new(CollectionsMarshal.AsSpan(_uiRenderCommands), colorTargetInfo, cameraMatrix, cmdBuf, swapchainTexture);
+        RenderPassContext debugContext = new(CollectionsMarshal.AsSpan(_debugRenderCommands), colorTargetInfo, cameraMatrix, cmdBuf, swapchainTexture);
         
-        bool firstRenderPass = true;
+        RenderPipelinePass(worldContext);
+        
+        RenderPipelinePass(transparentContext);
+        
+        RenderPipelinePass(uiContext);
+        
+        RenderPipelinePass(debugContext);
+
+        SDL.SubmitGPUCommandBuffer(cmdBuf);
+    }
+
+    private void RenderPipelinePass(RenderPassContext context) {
+        // TODO: Only do one gpu render pass per logical render pass
 
         int renderCommandIndex = 0;
 
@@ -266,7 +252,7 @@ public unsafe class NewRenderSystem : ISystem {
         // Process all passes
         int cmdCount = _worldRenderCommands.Count;
 
-        Span<RenderCommand> renderCommands = CollectionsMarshal.AsSpan(_worldRenderCommands);
+        Span<RenderCommand> renderCommands = context.renderCommands;
         
         while (renderCommandIndex < cmdCount) {
             currentKey = renderCommands[renderCommandIndex].RenderKey;
@@ -310,7 +296,7 @@ public unsafe class NewRenderSystem : ISystem {
 
             SDL.UnmapGPUTransferBuffer(_device, _spriteDataTransferBuffer);
 
-            IntPtr copyPass = SDL.BeginGPUCopyPass(cmdBuf);
+            IntPtr copyPass = SDL.BeginGPUCopyPass(context.gpuCommandBuffer);
 
             // TODO: Use offset, according to the todo above.
             SDL.UploadToGPUBuffer(copyPass, new() {
@@ -324,14 +310,10 @@ public unsafe class NewRenderSystem : ISystem {
             
             SDL.EndGPUCopyPass(copyPass);
 
-            IntPtr renderPass;
-            if (firstRenderPass) {
-                 renderPass = SDL.BeginGPURenderPass(cmdBuf, new IntPtr(&clearColorTargetInfo), 1, IntPtr.Zero);
-                 firstRenderPass = false;
-            }
-            else {
-                 renderPass = SDL.BeginGPURenderPass(cmdBuf, new IntPtr(&colorTargetInfo), 1, IntPtr.Zero);
-            }
+            SDL.GPUColorTargetInfo colorTargetInfo = context.colorTargetInfo;
+            
+            IntPtr renderPass = SDL.BeginGPURenderPass(context.gpuCommandBuffer, new IntPtr(&colorTargetInfo), 1, IntPtr.Zero);
+
             SDL.BindGPUGraphicsPipeline(renderPass, _pipeline);
             
             // TODO: If one batch exceeds buffer size, maybe use multiple buffers?
@@ -348,15 +330,15 @@ public unsafe class NewRenderSystem : ISystem {
             };
             
             SDL.BindGPUFragmentSamplers(renderPass, 0, new IntPtr(&tsBinding), 1);
+            
             // TODO: Consider pushing the camera data only once per frame
-            SDL.PushGPUVertexUniformData(cmdBuf, 0, new IntPtr(&cameraMatrix), (uint)sizeof(Matrix4x4));
+            Matrix4x4 cameraMatrix = context.cameraMatrix;
+            SDL.PushGPUVertexUniformData(context.gpuCommandBuffer, 0, new IntPtr(&cameraMatrix), (uint)sizeof(Matrix4x4));
             
             SDL.DrawGPUPrimitives(renderPass, (uint)(batchSize * 6), 1, 0, 0);
 
             SDL.EndGPURenderPass(renderPass);
         }
-
-        SDL.SubmitGPUCommandBuffer(cmdBuf);
     }
 
     public void OnShutdown() {
