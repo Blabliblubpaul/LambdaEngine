@@ -48,8 +48,8 @@ public unsafe class NewRenderSystem : ISystem {
     private List<RenderCommand> _uiRenderCommands;
     private List<RenderCommand> _debugRenderCommands;
     
-    private RenderCommand[] _renderCommands;
-    private int _renderCommandCount;
+    // private RenderCommand[] _renderCommands;
+    // private int _renderCommandCount;
     
     private NewRenderSystem() { }
 
@@ -98,7 +98,7 @@ public unsafe class NewRenderSystem : ISystem {
     public void OnStartup() {
         CreateGpuResources();
         
-        _renderCommands = new RenderCommand[2048];
+        // _renderCommands = new RenderCommand[2048];
     }
     
     // TODO: Move to asset loading system stage
@@ -116,7 +116,7 @@ public unsafe class NewRenderSystem : ISystem {
     public void OnExecute() {
         EmitRenderCommands();
 
-        _renderCommands.Sort((a, b) => a.RenderKey.CompareTo(b.RenderKey));
+        // _renderCommands.Sort((a, b) => a.RenderKey.CompareTo(b.RenderKey));
         
         // TODO: create/resize spriteDataBuffer and spriteDataTransferBuffer
         // TODO: better: use a fixed sized buffer and cap batch size.
@@ -174,10 +174,10 @@ public unsafe class NewRenderSystem : ISystem {
         QueryCollection<PositionComponent, ScaleComponent, SpriteComponent, ColorComponent> sprites =
             _spriteQuery.Execute<PositionComponent, ScaleComponent, SpriteComponent, ColorComponent>();
 
-        _renderCommandCount = (int)(rectPrimitives.EntityCount + sprites.EntityCount);
-        if (_renderCommands.Length < _renderCommandCount) {
-            _renderCommands = new RenderCommand[_renderCommandCount];
-        }
+        // _renderCommandCount = (int)(rectPrimitives.EntityCount + sprites.EntityCount);
+        // if (_renderCommands.Length < _renderCommandCount) {
+        //     _renderCommands = new RenderCommand[_renderCommandCount];
+        // }
 
         int renderCmdIndex = 0;
 
@@ -214,7 +214,7 @@ public unsafe class NewRenderSystem : ISystem {
             Vector2 screenSize = textureSize * entity.Item1.Scale * Camera.Zoom;
 
             RenderKey key = new(entity.Item2.ZIndex, RenderPipelineId.New(0), entity.Item2.TextureId, RenderCommandType.SPRITE);
-            _renderCommands[renderCmdIndex++] = new(key, screenPos, screenSize, 0, entity.Item3.Color);
+            // _renderCommands[renderCmdIndex++] = new(key, screenPos, screenSize, 0, entity.Item3.Color);
         }
     }
 
@@ -261,14 +261,20 @@ public unsafe class NewRenderSystem : ISystem {
         
         // TODO: Assign/(create?) correct pipeline based on renderkey
         _pipeline = RenderPipelineManager.Instance._defaultTexturePipeline;
-        while (renderCommandIndex < _renderCommandCount) {
-            currentKey = _renderCommands[renderCommandIndex].RenderKey;
+
+        // Process all passes
+        int cmdCount = _worldRenderCommands.Count;
+
+        Span<RenderCommand> renderCommands = CollectionsMarshal.AsSpan(_worldRenderCommands);
+        
+        while (renderCommandIndex < cmdCount) {
+            currentKey = renderCommands[renderCommandIndex].RenderKey;
             int start = renderCommandIndex++;
             int end = start + 1;
 
             int batchSize = 1;
 
-            while (renderCommandIndex < _renderCommandCount && currentKey == _renderCommands[renderCommandIndex + 1].RenderKey && batchSize < MAX_BATCH_SPRITES) {
+            while (renderCommandIndex < cmdCount && currentKey == renderCommands[renderCommandIndex + 1].RenderKey && batchSize < MAX_BATCH_SPRITES) {
                 end++;
                 batchSize++;
                 renderCommandIndex++;
@@ -284,10 +290,10 @@ public unsafe class NewRenderSystem : ISystem {
 
             int dataIndex = 0;
             for (int i = start; i < end; i++) {
-                dataPtr[dataIndex].Position = _renderCommands[i].Position.AsVector3(); // TODO: use sprite pos
-                dataPtr[dataIndex].Rotation = _renderCommands[i].Rotation;
-                dataPtr[dataIndex].W = _renderCommands[i].ScreenSize.X;
-                dataPtr[dataIndex].H = _renderCommands[i].ScreenSize.Y;
+                dataPtr[dataIndex].Position = renderCommands[i].Position.AsVector3(); // TODO: use sprite pos
+                dataPtr[dataIndex].Rotation = renderCommands[i].Rotation;
+                dataPtr[dataIndex].W = renderCommands[i].ScreenSize.X;
+                dataPtr[dataIndex].H = renderCommands[i].ScreenSize.Y;
                 
                 // Use the entire texture.
                 dataPtr[dataIndex].TexU = 0;
@@ -296,7 +302,7 @@ public unsafe class NewRenderSystem : ISystem {
                 dataPtr[dataIndex].TexH = 1;
                 
                 // TODO: Use sprite color
-                dataPtr[dataIndex].Color = _renderCommands[i].Color.AsFColorRgba();
+                dataPtr[dataIndex].Color = renderCommands[i].Color.AsFColorRgba();
                 
                 dataIndex++;
             }
