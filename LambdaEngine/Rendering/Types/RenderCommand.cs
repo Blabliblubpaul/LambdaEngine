@@ -5,7 +5,7 @@ using LambdaEngine.Types;
 namespace LambdaEngine.Rendering;
 
 [StructLayout(LayoutKind.Sequential)]
-internal readonly struct RenderCommand {
+public readonly struct RenderCommand {
      public readonly RenderKey RenderKey;
      public readonly Vector2 Position;
      public readonly Vector2 ScreenSize;
