@@ -162,6 +162,7 @@ public unsafe class NewRenderSystem : ISystem {
     // TODO: Allow the registration of subsystems for registering render commands.
     // TODO: Use List<T> for cmds per pass, prealloctae for ~2048 objects
     private void EmitRenderCommands() {
+        _worldRenderCommands.Clear();
         foreach (IRenderCommandCollector collector in _commandCollectors) {
             collector.Execute();
         }
