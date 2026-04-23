@@ -20,6 +20,8 @@ namespace LambdaEngine.Rendering;
 // TODO: Add sprite atlases
 public unsafe class NewRenderSystem : ISystem {
     public static readonly NewRenderSystem Instance = new();
+
+    private readonly List<IRenderCommandCollector> _commandCollectors = new(8);
     
     private const int MAX_BATCH_VERTICES = 32768;
     private const int MAX_BATCH_SPRITES = 1024;
@@ -41,6 +43,11 @@ public unsafe class NewRenderSystem : ISystem {
     private float[] _uCoords = [0.0f, 0.5f, 0.0f, 0.5f];
     private float[] _vCoords = [0.0f, 0.0f, 0.5f, 0.5f];
 
+    private List<RenderCommand> _worldRenderCommands;
+    private List<RenderCommand> _transparentRenderCommands;
+    private List<RenderCommand> _uiRenderCommands;
+    private List<RenderCommand> _debugRenderCommands;
+    
     private RenderCommand[] _renderCommands;
     private int _renderCommandCount;
     
@@ -73,8 +80,17 @@ public unsafe class NewRenderSystem : ISystem {
             .Include<SpriteComponent>()
             .Include<ColorComponent>()
             .Build();
+        
+        foreach (IRenderCommandCollector collector in _commandCollectors) {
+            collector.Setup(this, world);
+        }
 
         RenderingHelper.InitializeAssetLoader();
+
+        _worldRenderCommands = new(2048);
+        _transparentRenderCommands = new(2048);
+        _uiRenderCommands = new(1024);
+        _debugRenderCommands = new(1024);
 
         LDebug.Log("RenderSystem - setup complete.");
     }
@@ -108,7 +124,50 @@ public unsafe class NewRenderSystem : ISystem {
          ProcessRenderCommands();
     }
 
+    public (uint Width, uint height) GetGpuTextureSize(int textureId) {
+        return new(_textures[textureId].Width, _textures[textureId].Height);
+    }
+
+    public void RegisterRenderCommandCollector(IRenderCommandCollector collector) {
+        _commandCollectors.Add(collector);
+    }
+
+    public void RegisterRenderCommandCollector<T>() where T : IRenderCommandCollector, new() {
+        _commandCollectors.Add(new T());
+    }
+
+    public void RegisterRenderCommand(RenderPass pass, RenderCommand cmd) {
+        switch (pass) {
+            case RenderPass.WORLD:
+                _worldRenderCommands.Add(cmd);
+                break;
+            
+            case RenderPass.TRANSPARENT:
+                _transparentRenderCommands.Add(cmd);
+                break;
+            
+            case RenderPass.UI:
+                _uiRenderCommands.Add(cmd);
+                break;
+            
+            case RenderPass.DEBUG:
+                _debugRenderCommands.Add(cmd);
+                break;
+            
+            default:
+                throw new ArgumentOutOfRangeException(nameof(pass), pass, null);
+        }
+    }
+
+    // TODO: Allow the registration of subsystems for registering render commands.
+    // TODO: Use List<T> for cmds per pass, prealloctae for ~2048 objects
     private void EmitRenderCommands() {
+        foreach (IRenderCommandCollector collector in _commandCollectors) {
+            collector.Execute();
+        }
+
+        return;
+        
         QueryCollection<PositionComponent, ScaleComponent, RectPrimitiveComponent, ColorComponent> rectPrimitives =
             _rectPrimitiveQuery.Execute<PositionComponent, ScaleComponent, RectPrimitiveComponent, ColorComponent>();
 
@@ -190,6 +249,9 @@ public unsafe class NewRenderSystem : ISystem {
             LoadOp = SDL.GPULoadOp.Load,
             StoreOp = SDL.GPUStoreOp.Store
         };
+        
+        // TODO: Render Passes: World, Transparent (world), UI, Debug
+        // TODO: Only do one gpu render pass per logical render pass
         
         bool firstRenderPass = true;
 

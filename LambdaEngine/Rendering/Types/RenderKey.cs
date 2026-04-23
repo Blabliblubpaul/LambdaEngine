@@ -1,6 +1,6 @@
 ﻿namespace LambdaEngine.Rendering;
 
-internal readonly struct RenderKey : IComparable<RenderKey>, IEquatable<RenderKey> {
+public readonly struct RenderKey : IComparable<RenderKey>, IEquatable<RenderKey> {
     // 64bit: |8bit Z-Index|24bit PipelineId|24bit TextureId|8bit RenderType|
     private const ulong PIPELINE_MASK = 0x00FFFFFF00000000;
     private const ulong TEXTURE_MASK  = 0x00000000FFFFFF00;
