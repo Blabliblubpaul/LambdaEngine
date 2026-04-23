@@ -235,7 +235,7 @@ public unsafe class NewRenderSystem : ISystem {
         RenderPipelinePass(uiContext);
         
         RenderPipelinePass(debugContext);
-
+        
         SDL.SubmitGPUCommandBuffer(cmdBuf);
     }
 
@@ -253,6 +253,23 @@ public unsafe class NewRenderSystem : ISystem {
         int cmdCount = context.renderCommands.Length;
 
         Span<RenderCommand> renderCommands = context.renderCommands;
+
+        bool firstPass = true;
+        
+        SDL.GPUColorTargetInfo clearColorTargetInfo = new() {
+            Texture = context.swapchainTexture,
+            Cycle = false,
+            LoadOp = SDL.GPULoadOp.Clear,
+            StoreOp = SDL.GPUStoreOp.Store,
+            ClearColor = new SDL.FColor(0, 0, 0, 1)
+        };
+        
+        SDL.GPUColorTargetInfo otherColorTargetInfo = new() {
+            Texture = context.swapchainTexture,
+            Cycle = false,
+            LoadOp = SDL.GPULoadOp.Load,
+            StoreOp = SDL.GPUStoreOp.Store
+        };
         
         while (renderCommandIndex < cmdCount) {
             currentKey = renderCommands[renderCommandIndex].RenderKey;
@@ -311,8 +328,17 @@ public unsafe class NewRenderSystem : ISystem {
             SDL.EndGPUCopyPass(copyPass);
 
             SDL.GPUColorTargetInfo colorTargetInfo = context.colorTargetInfo;
+
+            IntPtr renderPass;
             
-            IntPtr renderPass = SDL.BeginGPURenderPass(context.gpuCommandBuffer, new IntPtr(&colorTargetInfo), 1, IntPtr.Zero);
+            if (firstPass) {
+                firstPass = false;
+                renderPass = SDL.BeginGPURenderPass(context.gpuCommandBuffer, new IntPtr(&clearColorTargetInfo), 1, IntPtr.Zero);
+            }
+            else {
+                renderPass = SDL.BeginGPURenderPass(context.gpuCommandBuffer, new IntPtr(&otherColorTargetInfo), 1, IntPtr.Zero);
+            }
+
 
             SDL.BindGPUGraphicsPipeline(renderPass, _pipeline);
             
@@ -336,7 +362,7 @@ public unsafe class NewRenderSystem : ISystem {
             SDL.PushGPUVertexUniformData(context.gpuCommandBuffer, 0, new IntPtr(&cameraMatrix), (uint)sizeof(Matrix4x4));
             
             SDL.DrawGPUPrimitives(renderPass, (uint)(batchSize * 6), 1, 0, 0);
-
+            
             SDL.EndGPURenderPass(renderPass);
         }
     }
