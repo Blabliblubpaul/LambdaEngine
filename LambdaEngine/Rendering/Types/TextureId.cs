@@ -16,8 +16,12 @@ public readonly struct TextureId : IEquatable<TextureId> {
         get => (int)Id;
     }
 
-    internal TextureId(uint id) {
+    private TextureId(uint id) {
         Id = id;
+    }
+    
+    internal static TextureId NewUnchecked(uint id) {
+        return new TextureId(id);
     }
 
     public static TextureId New(uint id) {

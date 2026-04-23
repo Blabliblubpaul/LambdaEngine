@@ -68,7 +68,7 @@ public class SpriteCommandCollector : IRenderCommandCollector {
             Vector2 textureSize = new(rawTextureSize.Width, rawTextureSize.Height);
             Vector2 screenSize = textureSize * entity.Item1.Scale * Camera.Zoom;
 
-            RenderKey key = new(entity.Item2.ZIndex, new RenderPipelineId(0), entity.Item2.TextureId, RenderCommandType.SPRITE);
+            RenderKey key = new(entity.Item2.ZIndex, RenderPipelineId.New(0), entity.Item2.TextureId, RenderCommandType.SPRITE);
             
             _renderSystem.RegisterRenderCommand(RenderPass.WORLD, new RenderCommand(key, screenPos, screenSize, 0, entity.Item3.Color));
         }

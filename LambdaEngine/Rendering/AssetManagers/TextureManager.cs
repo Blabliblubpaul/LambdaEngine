@@ -39,7 +39,7 @@ public unsafe class TextureManager {
         _textures.Add(new IntPtr(texture));
         uint id = (uint)_textures.Count;
         
-        return new Texture(texture, new TextureId(id));
+        return new Texture(texture, TextureId.New(id));
     }
 
     internal void ReleaseTextures() {
