@@ -4,6 +4,7 @@ using LambdaEngine;
 using LambdaEngine.Core.Common;
 using LambdaEngine.Physics;
 using LambdaEngine.Rendering;
+using LambdaEngine.Rendering.RenderCommandCollectors;
 using LambdaEngine.Types;
 
 namespace Example;
@@ -35,6 +36,8 @@ class Program {
             
             .RegisterSystem(NewRenderSystem.Instance, SystemStage.RENDER, 0)
             .Configure();
+        
+        NewRenderSystem.Instance.RegisterRenderCommandCollector<SpriteCommandCollector>();
         
         WindowManager.SetWindowSize(800, 600);
         WindowManager.BackgroundColor = ColorRgb.Cyan;
