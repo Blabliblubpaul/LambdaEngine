@@ -1,6 +1,6 @@
 namespace LambdaEngine.Rendering;
 
-internal enum RenderCommandType : byte {
+public enum RenderCommandType : byte {
     INVALID,
     PRIMITIVE_RECT,
     SPRITE
