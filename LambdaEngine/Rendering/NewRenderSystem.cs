@@ -274,7 +274,7 @@ public unsafe class NewRenderSystem : ISystem {
 
             int batchSize = 1;
 
-            while (renderCommandIndex < cmdCount && currentKey == renderCommands[renderCommandIndex + 1].RenderKey && batchSize < MAX_BATCH_SPRITES) {
+            while (renderCommandIndex < cmdCount + 1 && currentKey == renderCommands[renderCommandIndex + 1].RenderKey && batchSize < MAX_BATCH_SPRITES) {
                 end++;
                 batchSize++;
                 renderCommandIndex++;
