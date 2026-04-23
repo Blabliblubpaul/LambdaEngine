@@ -250,7 +250,7 @@ public unsafe class NewRenderSystem : ISystem {
         _pipeline = RenderPipelineManager.Instance._defaultTexturePipeline;
 
         // Process all passes
-        int cmdCount = _worldRenderCommands.Count;
+        int cmdCount = context.renderCommands.Length;
 
         Span<RenderCommand> renderCommands = context.renderCommands;
         
