@@ -12,6 +12,7 @@ namespace Example;
 class Program {
     public static Texture PlayerTexture;
     public static Texture EnemyTexture;
+    public static Texture BulletTexture;
     
     static void Main() {
         SystemManager.SystemManagerConfigurator configurator = new();
@@ -49,6 +50,8 @@ class Program {
         
         PlayerTexture = TextureManager.Instance.RegisterTexture("player.bmp");
         EnemyTexture = TextureManager.Instance.RegisterTexture("enemy.bmp");
+        BulletTexture = TextureManager.Instance.RegisterTexture("bullet.bmp");
+        
         ShaderManager.Instance.LoadDefaultTextureShaders("defaultTexture.vert", "defaultTexture.frag");
         
         engine.Run();

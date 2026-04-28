@@ -15,7 +15,7 @@ using LambdaEngine.Types;
 namespace Example.Systems;
 
 public class PlayerShootSystem : EcsSystem {
-    private const float bulletSpeed = 1000;
+    private const float bulletSpeed = 500;
 
     private ArchetypeHandle _bulletArchetype;
     
@@ -25,7 +25,7 @@ public class PlayerShootSystem : EcsSystem {
         base.OnSetup(engine, world);
 
         _bulletArchetype = World.GetOrCreateArchetype(typeof(PositionComponent), typeof(VelocityComponent), typeof(ColliderComponent),
-            typeof(ScaleComponent), typeof(RectPrimitiveComponent), typeof(ColorComponent), typeof(BulletTagComponent));
+            typeof(ScaleComponent), typeof(SpriteComponent), typeof(ColorComponent), typeof(BulletTagComponent));
     }
 
     public override void OnStartup() {
@@ -45,8 +45,8 @@ public class PlayerShootSystem : EcsSystem {
             World.SetComponent(bullet, new ScaleComponent(1, 1));
             World.SetComponent(bullet, new ColliderComponent(new BoxCollider(10, 10)));
             World.SetComponent(bullet, new VelocityComponent(direction * bulletSpeed));
-            World.SetComponent(bullet, new RectPrimitiveComponent(10, 10));
-            World.SetComponent(bullet, new ColorComponent(ColorRgb.Black));
+            World.SetComponent(bullet, new SpriteComponent(Program.BulletTexture));
+            World.SetComponent(bullet, new ColorComponent(ColorRgb.Magenta));
         }
     }
     
