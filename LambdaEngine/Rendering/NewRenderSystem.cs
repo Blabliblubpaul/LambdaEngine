@@ -22,6 +22,8 @@ namespace LambdaEngine.Rendering;
 public unsafe class NewRenderSystem : ISystem {
     public static readonly NewRenderSystem Instance = new();
 
+    private Vk _vk;
+
     private readonly List<IRenderCommandCollector> _commandCollectors = new(8);
     
     private const int MAX_BATCH_VERTICES = 32768;
@@ -395,9 +397,12 @@ public unsafe class NewRenderSystem : ISystem {
         
         extensions = SDL.VulkanGetInstanceExtensions(out uint extensionCount)?? [];
 
-        Vk vk = Vk.GetApi();
+        _vk = Vk.GetApi();
 
-        vk.EnumerateInstanceExtensionProperties((byte*)null, &extensionCount, null);
+        LDebug.Log($"{extensionCount} Vulkan extensions supported.");
+        
+        // TODO: Manage to get this to actually output into the console.
+        _vk.EnumerateInstanceExtensionProperties((byte*)null, &extensionCount, null);
         
         // TODO: Create Vulkan instance
 

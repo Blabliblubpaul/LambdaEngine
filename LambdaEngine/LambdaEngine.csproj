@@ -16,6 +16,12 @@
       <PackageReference Include="Silk.NET.Vulkan" Version="2.23.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="Rendering\Shaders\simple_shader.vert">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 <!--    <ItemGroup>-->
 <!--      <ProjectReference Include="..\..\LambdaEcsTesting\LambdaEcsAnalyzer\LambdaEcsAnalyzer\LambdaEcsAnalyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />-->
 <!--    </ItemGroup>-->

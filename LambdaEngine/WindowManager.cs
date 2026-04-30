@@ -57,6 +57,9 @@ public static class WindowManager {
             return false;
         }
 
+        // TODO: With Vulkan, handle window resize explicitly
+        SDL.SetWindowResizable(_windowHandle, false);
+
         LDebug.Log("Window created.");
         
         SDL.ShowWindow(_windowHandle);
