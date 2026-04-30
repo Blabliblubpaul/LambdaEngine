@@ -10,6 +10,7 @@ using LambdaEngine.Core.Queries.QueryCollection;
 using LambdaEngine.Debug;
 using LambdaEngine.Interfaces;
 using SDL3;
+using Silk.NET.Vulkan;
 
 namespace LambdaEngine.Rendering;
 
@@ -390,13 +391,15 @@ public unsafe class NewRenderSystem : ISystem {
     }
 
     private void SetupVulkan() {
-        uint extensionCount = 0;
         string[] extensions;
         
-        extensions = SDL.VulkanGetInstanceExtensions(out extensionCount)?? [];
+        extensions = SDL.VulkanGetInstanceExtensions(out uint extensionCount)?? [];
+
+        Vk vk = Vk.GetApi();
+
+        vk.EnumerateInstanceExtensionProperties((byte*)null, &extensionCount, null);
         
         // TODO: Create Vulkan instance
-        return;
 
         IntPtr vulkanInstance = 0;
 
