@@ -20,7 +20,24 @@
       <None Update="Rendering\Shaders\simple_shader.vert">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
+      <None Update="Rendering\Tools\compile_shaders.bat">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Rendering\Shaders\ShaderCache\" />
+    </ItemGroup>
+    
+    <Target Name="RunShaderCompile" AfterTargets="Build">
+        <Exec Condition="'$(OS)' == 'Windows_NT'"
+                WorkingDirectory="$(ProjectDir)\Rendering\Tools"
+                Command="cmd.exe /c compile_shaders.bat"/>
+
+        <Exec Condition="'$(OS)' != 'Windows_NT'"
+              WorkingDirectory="$(ProjectDir)/Rendering\Tools"
+              Command="bash compile_shaders.sh"/>
+    </Target>
 
 <!--    <ItemGroup>-->
 <!--      <ProjectReference Include="..\..\LambdaEcsTesting\LambdaEcsAnalyzer\LambdaEcsAnalyzer\LambdaEcsAnalyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />-->
