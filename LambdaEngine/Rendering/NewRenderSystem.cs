@@ -389,6 +389,19 @@ public unsafe class NewRenderSystem : ISystem {
         LDebug.Log("RenderSystem - shutdown complete.");
     }
 
+    private void SetupVulkan() {
+        uint extensionCount = 0;
+        string[] extensions;
+        
+        extensions = SDL.VulkanGetInstanceExtensions(out extensionCount)?? [];
+        
+        // TODO: Create Vulkan instance
+
+        IntPtr vulkanInstance = 0;
+
+        SDL.VulkanCreateSurface(_window, vulkanInstance, 0, out IntPtr surface);
+    }
+
     private void SetupDeviceAndSwapchain() {
         _device = SDL.CreateGPUDevice(SDL.GPUShaderFormat.SPIRV | SDL.GPUShaderFormat.DXIL, true, null);
         if (_device == IntPtr.Zero) {
