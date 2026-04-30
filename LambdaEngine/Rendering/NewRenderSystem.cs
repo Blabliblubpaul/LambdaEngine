@@ -220,8 +220,6 @@ public unsafe class NewRenderSystem : ISystem {
             LoadOp = SDL.GPULoadOp.Load,
             StoreOp = SDL.GPUStoreOp.Store
         };
-        
-        // TODO: Render Passes: World, Transparent (world), UI, Debug
 
         RenderPassContext worldContext = new(CollectionsMarshal.AsSpan(_worldRenderCommands), clearColorTargetInfo, cameraMatrix, cmdBuf, swapchainTexture);
         RenderPassContext transparentContext = new(CollectionsMarshal.AsSpan(_transparentRenderCommands), colorTargetInfo, cameraMatrix, cmdBuf, swapchainTexture);
@@ -230,18 +228,23 @@ public unsafe class NewRenderSystem : ISystem {
         
         RenderPipelinePass(worldContext);
         
-        RenderPipelinePass(transparentContext);
-        
-        RenderPipelinePass(uiContext);
-        
-        RenderPipelinePass(debugContext);
+        // RenderPipelinePass(transparentContext);
+        //
+        // RenderPipelinePass(uiContext);
+        //
+        // RenderPipelinePass(debugContext);
         
         SDL.SubmitGPUCommandBuffer(cmdBuf);
     }
 
     private void RenderPipelinePass(RenderPassContext context) {
         // TODO: Only do one gpu render pass per logical render pass
+        ExecuteCopyPass(context);
+        
+        ExecuteRenderPass(context);
+    }
 
+    private void ExecuteCopyPass(RenderPassContext context) {
         int renderCommandIndex = 0;
 
         RenderKey currentKey = RenderKey.EMPTY;
@@ -249,51 +252,39 @@ public unsafe class NewRenderSystem : ISystem {
         // TODO: Assign/(create?) correct pipeline based on renderkey
         _pipeline = RenderPipelineManager.Instance._defaultTexturePipeline;
 
-        // Process all passes
         int cmdCount = context.renderCommands.Length;
+        
+        if (cmdCount == 0) {
+            return;
+        }
 
         Span<RenderCommand> renderCommands = context.renderCommands;
 
-        bool firstPass = true;
+        // TODO: Solve buffer overflows, use rings buffers, etc.
+        SpriteInstance* dataPtr =
+            (SpriteInstance*)SDL.MapGPUTransferBuffer(_device, _spriteDataTransferBuffer, true);
+
+        if (dataPtr == null) {
+            throw new Exception($"Failed to map GPU transfer buffer: {SDL.GetError()}");
+        }
+        int dataIndex = 0;
         
-        SDL.GPUColorTargetInfo clearColorTargetInfo = new() {
-            Texture = context.swapchainTexture,
-            Cycle = false,
-            LoadOp = SDL.GPULoadOp.Clear,
-            StoreOp = SDL.GPUStoreOp.Store,
-            ClearColor = new SDL.FColor(0, 0, 0, 1)
-        };
-        
-        SDL.GPUColorTargetInfo otherColorTargetInfo = new() {
-            Texture = context.swapchainTexture,
-            Cycle = false,
-            LoadOp = SDL.GPULoadOp.Load,
-            StoreOp = SDL.GPUStoreOp.Store
-        };
-        
-        while (renderCommandIndex < cmdCount) {
-            currentKey = renderCommands[renderCommandIndex].RenderKey;
-            int start = renderCommandIndex++;
-            int end = start + 1;
+        int count = 0;
+        while (count < cmdCount) {
+            int start = count;
+            count++;
 
             int batchSize = 1;
+            
+            currentKey = renderCommands[start].RenderKey;
 
-            while (renderCommandIndex < cmdCount - 1 && currentKey == renderCommands[renderCommandIndex + 1].RenderKey && batchSize < MAX_BATCH_SPRITES) {
-                end++;
+            while (count < cmdCount && currentKey == renderCommands[count].RenderKey && batchSize < MAX_BATCH_SPRITES) {
+                count++;
                 batchSize++;
-                renderCommandIndex++;
             }
             
-            // TODO: Currently one render pass is used per batch. Better: upload multiple batches before rendering.
-            SpriteInstance* dataPtr =
-                (SpriteInstance*)SDL.MapGPUTransferBuffer(_device, _spriteDataTransferBuffer, true);
-
-            if (dataPtr == null) {
-                throw new Exception($"Failed to map GPU transfer buffer: {SDL.GetError()}");
-            }
-
-            int dataIndex = 0;
-            for (int i = start; i < end; i++) {
+            
+            for (int i = start; i < count; i++) {
                 dataPtr[dataIndex].Position = renderCommands[i].Position.AsVector3(); // TODO: use sprite pos
                 dataPtr[dataIndex].Rotation = renderCommands[i].Rotation;
                 dataPtr[dataIndex].W = renderCommands[i].ScreenSize.X;
@@ -310,44 +301,67 @@ public unsafe class NewRenderSystem : ISystem {
                 
                 dataIndex++;
             }
+        }
+        
+        SDL.UnmapGPUTransferBuffer(_device, _spriteDataTransferBuffer);
 
-            SDL.UnmapGPUTransferBuffer(_device, _spriteDataTransferBuffer);
+        IntPtr copyPass = SDL.BeginGPUCopyPass(context.gpuCommandBuffer);
 
-            IntPtr copyPass = SDL.BeginGPUCopyPass(context.gpuCommandBuffer);
-
-            // TODO: Use offset, according to the todo above.
-            SDL.UploadToGPUBuffer(copyPass, new() {
-                TransferBuffer = _spriteDataTransferBuffer,
-                Offset = 0
-            }, new() {
-                Buffer = _spriteDataBuffer,
-                Offset = 0,
-                Size = (uint)(batchSize * sizeof(SpriteInstance))
-            }, true);
+        // TODO: Use offset, according to the todo above.
+        SDL.UploadToGPUBuffer(copyPass, new() {
+            TransferBuffer = _spriteDataTransferBuffer,
+            Offset = 0
+        }, new() {
+            Buffer = _spriteDataBuffer,
+            Offset = 0,
+            Size = (uint)(cmdCount * sizeof(SpriteInstance))
+        }, true);
             
-            SDL.EndGPUCopyPass(copyPass);
+        SDL.EndGPUCopyPass(copyPass);
+    }
 
-            SDL.GPUColorTargetInfo colorTargetInfo = context.colorTargetInfo;
+    private void ExecuteRenderPass(RenderPassContext context) {
+        const uint VERTICES_PER_SPRITE = 6;
+        RenderKey currentKey = RenderKey.EMPTY;
+        
+        // TODO: Assign/(create?) correct pipeline based on renderkey
+        _pipeline = RenderPipelineManager.Instance._defaultTexturePipeline;
 
-            IntPtr renderPass;
+        int cmdCount = context.renderCommands.Length;
+
+        if (cmdCount == 0) {
+            return;
+        }
+        
+        Span<RenderCommand> renderCommands = context.renderCommands;
+        
+        // TODO: Currently one render pass is used per batch. Better: upload multiple batches before rendering.
+        SDL.GPUColorTargetInfo colorTargetInfo = context.colorTargetInfo;
+
+        IntPtr renderPass = SDL.BeginGPURenderPass(context.gpuCommandBuffer, new IntPtr(&colorTargetInfo), 1, IntPtr.Zero);
+        
+        int count = 0;
+        while (count < cmdCount) {
+            int start = count;
+            count++;
+
+            int batchSize = 1;
             
-            if (firstPass) {
-                firstPass = false;
-                renderPass = SDL.BeginGPURenderPass(context.gpuCommandBuffer, new IntPtr(&clearColorTargetInfo), 1, IntPtr.Zero);
-            }
-            else {
-                renderPass = SDL.BeginGPURenderPass(context.gpuCommandBuffer, new IntPtr(&otherColorTargetInfo), 1, IntPtr.Zero);
-            }
+            currentKey = renderCommands[start].RenderKey;
 
+            while (count < cmdCount && currentKey == renderCommands[count].RenderKey && batchSize < MAX_BATCH_SPRITES) {
+                count++;
+                batchSize++;
+            }
 
             SDL.BindGPUGraphicsPipeline(renderPass, _pipeline);
             
-            // TODO: If one batch exceeds buffer size, maybe use multiple buffers?
-            // Or use multiple buffer for different rendertypes?
             IntPtr[] buffers = new IntPtr[1];
             buffers[0] = _spriteDataBuffer;
             
+            // SDL.BindGPUVertexStorageBuffers(renderPass, (uint)start, buffers, 1);
             SDL.BindGPUVertexStorageBuffers(renderPass, 0, buffers, 1);
+            LDebug.Log(start.ToString());
             
             // TODO: use correct batch texture
             SDL.GPUTextureSamplerBinding tsBinding = new() {
@@ -361,10 +375,11 @@ public unsafe class NewRenderSystem : ISystem {
             Matrix4x4 cameraMatrix = context.cameraMatrix;
             SDL.PushGPUVertexUniformData(context.gpuCommandBuffer, 0, new IntPtr(&cameraMatrix), (uint)sizeof(Matrix4x4));
             
-            SDL.DrawGPUPrimitives(renderPass, (uint)(batchSize * 6), 1, 0, 0);
-            
-            SDL.EndGPURenderPass(renderPass);
+            //SDL.DrawGPUPrimitives(renderPass, (uint)(batchSize * VERTICES_PER_SPRITE), 1, (uint)(start * VERTICES_PER_SPRITE), 0);
+            SDL.DrawGPUPrimitives(renderPass, (uint)(batchSize * VERTICES_PER_SPRITE), 1, 0, 0);
         }
+        
+        SDL.EndGPURenderPass(renderPass);
     }
 
     public void OnShutdown() {
@@ -372,6 +387,20 @@ public unsafe class NewRenderSystem : ISystem {
         SDL.DestroyGPUDevice(_device);
         
         LDebug.Log("RenderSystem - shutdown complete.");
+    }
+
+    private void SetupVulkan() {
+        uint extensionCount = 0;
+        string[] extensions;
+        
+        extensions = SDL.VulkanGetInstanceExtensions(out extensionCount)?? [];
+        
+        // TODO: Create Vulkan instance
+        return;
+
+        IntPtr vulkanInstance = 0;
+
+        SDL.VulkanCreateSurface(_window, vulkanInstance, 0, out IntPtr surface);
     }
 
     private void SetupDeviceAndSwapchain() {

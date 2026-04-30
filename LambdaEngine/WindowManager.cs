@@ -49,7 +49,7 @@ public static class WindowManager {
             windowTitle,
             WindowWidth,
             WindowHeight,
-            SDL.WindowFlags.MouseFocus
+            SDL.WindowFlags.MouseFocus | SDL.WindowFlags.Vulkan
         );
 
         if (_windowHandle == IntPtr.Zero) {
