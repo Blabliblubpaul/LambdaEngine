@@ -396,6 +396,7 @@ public unsafe class NewRenderSystem : ISystem {
         extensions = SDL.VulkanGetInstanceExtensions(out extensionCount)?? [];
         
         // TODO: Create Vulkan instance
+        return;
 
         IntPtr vulkanInstance = 0;
 
