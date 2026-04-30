@@ -18,18 +18,17 @@
 
     <ItemGroup>
       <None Update="Rendering\Shaders\simple_shader.vert">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       </None>
       <None Update="Rendering\Tools\compile_shaders.bat">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      </None>
+      <None Update="Rendering\Shaders\simple_shader.frag">
+        <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       </None>
     </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Rendering\Shaders\ShaderCache\" />
-    </ItemGroup>
     
-    <Target Name="RunShaderCompile" AfterTargets="Build">
+    <Target Name="CompileShaders" AfterTargets="Build">
         <Exec Condition="'$(OS)' == 'Windows_NT'"
                 WorkingDirectory="$(ProjectDir)\Rendering\Tools"
                 Command="cmd.exe /c compile_shaders.bat"/>
@@ -38,6 +37,19 @@
               WorkingDirectory="$(ProjectDir)/Rendering\Tools"
               Command="bash compile_shaders.sh"/>
     </Target>
+    
+    <Target Name="CopyShaders" AfterTargets="CompileShaders">
+        <Message Importance="high" Text="=== CopyShaders RUNNING ===" />
+        <ItemGroup>
+            <ShaderFiles Include="$(ProjectDir)\Rendering\Shaders\ShaderCache\**\*.spv"/>
+        </ItemGroup>
+        
+        <Copy SourceFiles="@(ShaderFiles)"
+              DestinationFiles="@(ShaderFiles->'$(TargetDir)ShaderCache\%(RecursiveDir)%(Filename)%(Extension)')"
+              SkipUnchangedFiles="true"/>
+    </Target>
+    
+<!--    <Target Name="AfterBuild" AfterTargets="Build" DependsOnTargets="CopyShaders"/>-->
 
 <!--    <ItemGroup>-->
 <!--      <ProjectReference Include="..\..\LambdaEcsTesting\LambdaEcsAnalyzer\LambdaEcsAnalyzer\LambdaEcsAnalyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />-->
